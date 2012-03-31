@@ -132,17 +132,8 @@ class KLT_TrackingContext:
 
 	def KLTUpdateTCBorder(self):
 	
-		#float val;
-		#int pyramid_gauss_hw;
-		#int smooth_gauss_hw;
-		#int gauss_width, gaussderiv_width;
 		num_levels = self.nPyramidLevels;
-		#int n_invalid_pixels;
-		#int window_hw;
 		ss = self.subsampling;
-		#int ss_power;
-		#int border;
-		#int i;
 
 		# Check window size (and correct if necessary)
 		if self.window_width % 2 != 1:
@@ -177,13 +168,14 @@ class KLT_TrackingContext:
 		#   level 1, which translated means 5*subsampling invalid pixels   
 		#   in the original level 0. 
 		n_invalid_pixels = smooth_gauss_hw
-		for i in range(num_levels):
+		for i in range(1,num_levels):
 			val = (float(n_invalid_pixels) + pyramid_gauss_hw) / ss
 			n_invalid_pixels = int(val + 0.99)  # Round up
+			print "x",n_invalid_pixels
 	
 		# ss_power = ss^(num_levels-1) 
 		ss_power = 1
-		for i in range(num_levels):
+		for i in range(1,num_levels):
 			ss_power *= ss
 
 		# Compute border by translating invalid pixels back into

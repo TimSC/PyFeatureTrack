@@ -33,12 +33,17 @@ def _computeKernels(sigma):
 
     	# Compute widths
 	gauss.width = maxKernelWidth;
-	for i in range(-hw, abs(gauss.data[i+hw] / max_gauss) < factor):
+	i = -hw
+	while(abs(gauss.data[i+hw] / max_gauss) < factor):
+		i = i + 1
 		gauss.width -= 2
 	gaussderiv.width = maxKernelWidth
 
-	for i in range(-hw, abs(gaussderiv.data[i+hw] / max_gaussderiv) < factor) :
+	i = -hw
+	while(abs(gaussderiv.data[i+hw] / max_gaussderiv) < factor) :
 		gaussderiv.width -= 2
+		i = i + 1
+
 	if gauss.width == maxKernelWidth or gaussderiv.width == maxKernelWidth:
 		KLTError("(_computeKernels) maxKernelWidth {0} is too small for a sigma of {1}".format(maxKernelWidth, sigma))
 
@@ -47,6 +52,7 @@ def _computeKernels(sigma):
 		gauss.data[i] = gauss.data[i+(maxKernelWidth-gauss.width)/2]
 	for i in range(gaussderiv.width):
 		gaussderiv.data[i] = gaussderiv.data[i+(maxKernelWidth-gaussderiv.width)/2]
+
 	# Normalize gauss and deriv 
 	hw = gaussderiv.width / 2
 	den = 0.0;
@@ -54,6 +60,7 @@ def _computeKernels(sigma):
 		den += gauss.data[i]
 	for i in range(gauss.width): 
 		gauss.data[i] /= den
+
 	den = 0.0
 	for i in range(-hw,hw+1): 
 		den -= i*gaussderiv.data[i+hw]
