@@ -10,9 +10,10 @@ from klt import *
 from PIL import Image
 from selectGoodFeatures import *
 from writeFeatures import *
+from trackFeatures import *
+import pickle
 
-if __name__=="__main__":
-
+if 0:
 	tc = KLT_TrackingContext()
 	nFeatures = 100
 	
@@ -27,11 +28,21 @@ if __name__=="__main__":
 	print "\nIn first image:"
 	for i, feat in enumerate(fl):
 		print "Feature #{0}:  ({1},{2}) with value of {3}".format(i, feat.x, feat.y, feat.val)
-  
+
 	KLTWriteFeatureListToPPM(fl, img1, "feat1.ppm")
 	#KLTWriteFeatureList(fl, "feat1.txt", "%3d")
 
-	#KLTTrackFeatures(tc, img1, img2, ncols, nrows, fl)
+	pickle.dump(tc, open("context.dat","w"))
+	pickle.dump(fl, open("featurelist.dat","w"))
+
+if __name__=="__main__":
+	img1 = Image.open("img0.pgm")
+	img2 = Image.open("img1.pgm")
+
+	tc = pickle.load(open("context.dat"))
+	fl = pickle.load(open("featurelist.dat"))
+
+	KLTTrackFeatures(tc, img1, img2, fl)
 
 	#printf("\nIn second image:\n");
 	#for (i = 0 ; i < fl->nFeatures ; i++)

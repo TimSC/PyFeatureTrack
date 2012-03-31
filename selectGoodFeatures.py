@@ -11,14 +11,6 @@ class selectionMode:
 	REPLACING_SOME = 2
 KLT_verbose = 1
 
-class kltState:
-	KLT_TRACKED = 0
-	KLT_NOT_FOUND = -1
-	KLT_SMALL_DET = -2
-	KLT_MAX_ITERATIONS = -3
-	KLT_OOB = -4
-	KLT_LARGE_RESIDUE = -5
-
 #*********************************************************************
 
 def _fillFeaturemap(x, y, featuremap, mindist, ncols, nrows):

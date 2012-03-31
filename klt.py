@@ -18,12 +18,13 @@
 #define NULL  0
 #endif
 
-#define KLT_TRACKED           0
-#define KLT_NOT_FOUND        -1
-#define KLT_SMALL_DET        -2
-#define KLT_MAX_ITERATIONS   -3
-#define KLT_OOB              -4
-#define KLT_LARGE_RESIDUE    -5
+class kltState:
+	KLT_TRACKED = 0
+	KLT_NOT_FOUND = -1
+	KLT_SMALL_DET = -2
+	KLT_MAX_ITERATIONS = -3
+	KLT_OOB = -4
+	KLT_LARGE_RESIDUE = -5
 
 #include "klt_util.h" /* for affine mapping */
 

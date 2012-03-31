@@ -35,3 +35,49 @@ def KLTWriteFeatureListToPPM(featurelist, greyimg, filename):
 	# Write to PPM file 
 	tmp.save(filename)
 
+
+#*********************************************************************
+#* KLTWriteFeatureList()
+#* KLTWriteFeatureHistory()
+#* KLTWriteFeatureTable()
+#* 
+#* Writes features to file or to screen.
+#*
+#* INPUTS
+#* fname: name of file to write data; if NULL, then print to stderr
+#* fmt:   format for printing (e.g., "%5.1f" or "%3d");
+#*        if NULL, and if fname is not NULL, then write to binary file.
+#*
+
+def KLTWriteFeatureList(fl, fname, fmt):
+
+	#FILE *fp;
+	#char format[100];
+	#char type;
+	#int i;
+
+	fmtStr = "binary" if fmt is None else "text"
+	if KLT_verbose >= 1 and fname is not None:
+		print "(KLT) Writing feature list to {0} file: '{1}'".format(fmtStr, fname)
+
+	if fmt is not None: # text file or stderr
+		fp = _printSetupTxt(fname, fmt, format, type);
+	  	_printHeader(fp, format, FEATURE_LIST, 0, fl.nFeatures);
+	
+	  	#for (i = 0 ; i < fl->nFeatures ; i++):
+		#	fprintf(fp, "%7d | ", i)
+		#	_printFeatureTxt(fp, fl.feature[i], format, type)
+		#	fprintf(fp, "\n")
+
+		_printShutdown(fp)
+
+	else: # binary file 
+		fp = _printSetupBin(fname)
+		#fwrite(binheader_fl, sizeof(char), BINHEADERLENGTH, fp);
+		#fwrite(&(fl.nFeatures), sizeof(int), 1, fp)
+		#for (i = 0 ; i < fl.nFeatures ; i++):
+		#	_printFeatureBin(fp, fl.feature[i])
+	
+		fclose(fp)
+	
+

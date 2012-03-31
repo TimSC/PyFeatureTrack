@@ -228,7 +228,7 @@ def KLTComputeSmoothedImage(img,sigma):
 
 	# Compute kernel, if necessary; gauss_deriv is not used
 	global cachegauss, cachegaussderiv, cached_sigma_last
-	if abs(sigma - cached_sigma_last) > 0.05:
+	if cached_sigma_last is None or abs(sigma - cached_sigma_last) > 0.05:
 		gauss, gaussderiv = _computeKernels(sigma)
 	else:
 		gauss, gaussderiv = cachegauss, cachegaussderiv
