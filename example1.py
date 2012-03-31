@@ -15,9 +15,9 @@ import pickle
 
 if __name__=="__main__":
 	tc = KLT_TrackingContext()
-	nFeatures = 1
+	nFeatures = 50
 	
-	#KLTPrintTrackingContext(tc)
+	KLTPrintTrackingContext(tc)
 
 	img1 = Image.open("img0.pgm")
 	img2 = Image.open("img1.pgm")
@@ -25,7 +25,6 @@ if __name__=="__main__":
 
 	fl = KLTSelectGoodFeatures(tc, img1, nFeatures)
 
-	tc.writeInternalImages = True
 	print "\nIn first image:"
 	for i, feat in enumerate(fl):
 		print "Feature #{0}:  ({1},{2}) with value of {3}".format(i, feat.x, feat.y, feat.val)
@@ -47,14 +46,12 @@ if __name__=="__main__":
 
 	KLTTrackFeatures(tc, img1, img2, fl)
 
-	#print "\nIn second image:"
-	#for i, feat in enumerate(fl):
-	#	print "Feature #{0}:  ({1},{2}) with value of {3}".format(i, feat.x, feat.y, feat.val)
+	print "\nIn second image:"
+	for i, feat in enumerate(fl):
+		print "Feature #{0}:  ({1},{2}) with value of {3}".format(i, feat.x, feat.y, feat.val)
 
 	KLTWriteFeatureListToPPM(fl, img2, "feat2.ppm")
 	#KLTWriteFeatureList(fl, "feat2.fl", NULL)      # binary file 
 	#KLTWriteFeatureList(fl, "feat2.txt", "%5.1f")  # text file   
-
-
 
 
