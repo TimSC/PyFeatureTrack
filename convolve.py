@@ -1,6 +1,13 @@
 
-import math
+import math, numpy as np
 from PIL import Image
+
+useScipyConvolution = False
+try:
+	import scipy.ndimage
+	useScipyConvolution = False
+except:
+	print "Warning: Failed to import scipy"
 
 class ConvolutionKernel:
 	def __init__(self, maxKernelWidth = 71):
@@ -192,7 +199,16 @@ def _convolveImageVert(imgin, kernel):
 
 def _convolveSeparate(imgin,horiz_kernel,vert_kernel):
 
-	# Do convolution
+	if useScipyConvolution:
+		#Do convolution using scipy (faster)
+
+		imginArr = np.array(imgin)
+		tmpimg = scipy.ndimage.filters.convolve1d(imginArr, horiz_kernel.data, axis = 0)
+		imgout = scipy.ndimage.filters.convolve1d(tmpimg, vert_kernel.data, axis = 1)
+		#print imgout
+		return Image.fromarray(imgout)
+
+	# Do convolution in native code (slower)
 	tmpimg = _convolveImageHoriz(imgin, horiz_kernel)
 
 	imgout = _convolveImageVert(tmpimg, vert_kernel)

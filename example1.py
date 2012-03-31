@@ -13,7 +13,7 @@ from writeFeatures import *
 from trackFeatures import *
 import pickle
 
-if __name__=="__main__":
+def main():
 	tc = KLT_TrackingContext()
 	nFeatures = 50
 	
@@ -39,7 +39,7 @@ if __name__=="__main__":
 	#img2 = Image.open("img1.pgm")
 
 	#tc = pickle.load(open("context.dat"))
-	#tc.writeInternalImages = True
+	tc.writeInternalImages = True
 	#KLTPrintTrackingContext(tc)
 
 	#fl = pickle.load(open("featurelist.dat"))
@@ -54,4 +54,6 @@ if __name__=="__main__":
 	#KLTWriteFeatureList(fl, "feat2.fl", NULL)      # binary file 
 	#KLTWriteFeatureList(fl, "feat2.txt", "%5.1f")  # text file   
 
+if __name__=="__main__":
+	main()
 
