@@ -259,10 +259,10 @@ class KLT_Feature:
 		aff_Ayy = None
 # KLT_FeatureRec, *KLT_Feature;
 
-class KLT_FeatureList:
-	def __init__(self, nFeatures):
-		self.nFeatures = nFeatures
-		self.feature = [KLT_Feature() for i in range(self.nFeatures)]
+#class KLT_FeatureList:
+#	def __init__(self, nFeatures):
+#		#self.nFeatures = nFeatures
+#		self.feature = [KLT_Feature() for i in range(nFeatures)]
 #KLT_FeatureListRec, *KLT_FeatureList;
 
 class KLT_FeatureHistory:
@@ -278,54 +278,6 @@ class KLT_FeatureTable:
   #KLT_Feature **feature;
 #KLT_FeatureTableRec, *KLT_FeatureTable;
 
-#*******************
-#* Functions
-#*
-
-# Create
-#def KLTCreateTrackingContext():
-#KLT_FeatureList KLTCreateFeatureList(
-#  int nFeatures);
-#KLT_FeatureHistory KLTCreateFeatureHistory(
-#  int nFrames);
-#KLT_FeatureTable KLTCreateFeatureTable(
-#  int nFrames,
-#  int nFeatures);
-
-# Free 
-#void KLTFreeTrackingContext(
-#  KLT_TrackingContext tc);
-#void KLTFreeFeatureList(
-#  KLT_FeatureList fl);
-#void KLTFreeFeatureHistory(
-#  KLT_FeatureHistory fh);
-#void KLTFreeFeatureTable(
-#  KLT_FeatureTable ft);
-
-#Processing
-#void KLTSelectGoodFeatures(
-#  KLT_TrackingContext tc,
-#  KLT_PixelType *img,
-#  int ncols,
-#  int nrows,
-#  KLT_FeatureList fl);
-#void KLTTrackFeatures(
-#  KLT_TrackingContext tc,
-#  KLT_PixelType *img1,
-#  KLT_PixelType *img2,
-#  int ncols,
-#  int nrows,
-#  KLT_FeatureList fl);
-#void KLTReplaceLostFeatures(
-#  KLT_TrackingContext tc,
-#  KLT_PixelType *img,
-#  int ncols,
-#  int nrows,
-#  KLT_FeatureList fl);
-
-# Utilities
-#int KLTCountRemainingFeatures(
-#  KLT_FeatureList fl);
 def KLTPrintTrackingContext(tc):
 
 	print tc
@@ -356,70 +308,16 @@ def KLTPrintTrackingContext(tc):
 	print "\tpyramid_last_grady = {0}".format(tc.pyramid_last_grady)
 	print "\n"
 
+#*********************************************************************
+#* KLTCountRemainingFeatures
+#*
 
+def KLTCountRemainingFeatures(fl):
 
-
-
-#void KLTChangeTCPyramid(
-#  KLT_TrackingContext tc,
-#  int search_range);
-#void KLTUpdateTCBorder(
-#  KLT_TrackingContext tc);
-#void KLTStopSequentialMode(
-#  KLT_TrackingContext tc);
-#void KLTSetVerbosity(
-#  int verbosity);
-#float _KLTComputeSmoothSigma(
-#  KLT_TrackingContext tc);
-
-# Storing/Extracting Features
-#void KLTStoreFeatureList(
-#  KLT_FeatureList fl,
-#  KLT_FeatureTable ft,
-#  int frame);
-#void KLTExtractFeatureList(
-#  KLT_FeatureList fl,
-#  KLT_FeatureTable ft,
-#  int frame);
-#void KLTStoreFeatureHistory(
-#  KLT_FeatureHistory fh,
-#  KLT_FeatureTable ft,
-#  int feat);
-#void KLTExtractFeatureHistory(
-#  KLT_FeatureHistory fh,
-#  KLT_FeatureTable ft,
-#  int feat);
-
-# Writing/Reading
-#void KLTWriteFeatureListToPPM(
-#  KLT_FeatureList fl,
-#  KLT_PixelType *greyimg,
-#  int ncols,
-#  int nrows,
-#  char *filename);
-#void KLTWriteFeatureList(
-#  KLT_FeatureList fl,
-#  char *filename,
-#  char *fmt);
-#void KLTWriteFeatureHistory(
-#  KLT_FeatureHistory fh,
-#  char *filename,
-#  char *fmt);
-#void KLTWriteFeatureTable(
-#  KLT_FeatureTable ft,
-#  char *filename,
-#  char *fmt);
-#KLT_FeatureList KLTReadFeatureList(
-#  KLT_FeatureList fl,
-#  char *filename);
-#KLT_FeatureHistory KLTReadFeatureHistory(
-#  KLT_FeatureHistory fh,
-#  char *filename);
-#KLT_FeatureTable KLTReadFeatureTable(
-#  KLT_FeatureTable ft,
-#  char *filename);
-
-
-
+	count = 0
+	for feat in fl:
+		if feat.val >= 0:
+			count = count + 1
+	return count
 
 

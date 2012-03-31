@@ -14,7 +14,6 @@ if __name__=="__main__":
 
 	tc = KLT_TrackingContext()
 	nFeatures = 100
-	#fl = KLT_FeatureList(nFeatures)
 	
 	KLTPrintTrackingContext(tc)
 
@@ -22,13 +21,11 @@ if __name__=="__main__":
 	img2 = Image.open("img1.pgm")
 	ncols, nrows = img1.size
 
-	KLTSelectGoodFeatures(tc, img1, nFeatures)
+	fl = KLTSelectGoodFeatures(tc, img1, nFeatures)
 
-	#printf("\nIn first image:\n")
-	#for (i = 0 ; i < fl->nFeatures ; i++):
-	#	printf("Feature #%d:  (%f,%f) with value of %d\n",
-        #	i, fl->feature[i]->x, fl->feature[i]->y,
-        #	fl->feature[i]->val)
+	print "\nIn first image:"
+	for i, feat in enumerate(fl):
+		print "Feature #{0}:  ({1},{2}) with value of {3}".format(i, feat.x, feat.y, feat.val)
   
 	#KLTWriteFeatureListToPPM(fl, img1, ncols, nrows, "feat1.ppm")
 	#KLTWriteFeatureList(fl, "feat1.txt", "%3d")
