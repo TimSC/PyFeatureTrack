@@ -43,7 +43,7 @@ class KLTPyramid:
 		#int i, x, y;
 	
 		if subsampling != 2 and subsampling != 4 and \
-		    subsampling != 8 and subsampling != 16 and subsampling != 32:
+			subsampling != 8 and subsampling != 16 and subsampling != 32:
 			KLTError("(_KLTComputePyramid)  Pyramid's subsampling must " + \
 			   "be either 2, 4, 8, 16, or 32")
 
@@ -66,8 +66,6 @@ class KLTPyramid:
 				for x in range(ncols):
 					subsampImg = Image.new("F",(ncols,nrows))
 					subsampImgL = subsampImg.load()
-					print x,y,subsampImg.size
-					print subsampling*x+subhalf, subsampling*y+subhalf, tmpimg.size
 					subsampImgL[x,y] = tmpimgL[subsampling*x+subhalf, subsampling*y+subhalf]
 						#tmpimg->data[(subsampling*y+subhalf)*oldncols + (subsampling*x+subhalf)]
 					self.img[i] = subsampImg

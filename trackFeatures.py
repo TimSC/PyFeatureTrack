@@ -11,6 +11,112 @@ from pyramid import *
 from PIL import Image
 
 #*********************************************************************
+#* _trackFeature
+#*
+#* Tracks a feature point from one image to the next.
+#*
+#* RETURNS
+#* KLT_SMALL_DET if feature is lost,
+#* KLT_MAX_ITERATIONS if tracking stopped because iterations timed out,
+#* KLT_TRACKED otherwise.
+#*
+
+def _trackFeature(
+	x1,  # location of window in first image 
+	y1,
+	x2, # starting location of search in second image
+	y2,
+	img1, 
+	gradx1,
+	grady1,
+	img2, 
+	gradx2,
+	grady2,
+	width,           # size of window
+	height,
+	step_factor, # 2.0 comes from equations, 1.0 seems to avoid overshooting
+	max_iterations,
+	small,         # determinant threshold for declaring KLT_SMALL_DET 
+	th,            # displacement threshold for stopping               
+	max_residue,   # residue threshold for declaring KLT_LARGE_RESIDUE 
+	lighting_insensitive): # whether to normalize for gain and bias 
+
+	#_FloatWindow imgdiff, gradx, grady;
+	#float gxx, gxy, gyy, ex, ey, dx, dy;
+	iteration = 0
+	hw = width/2
+	hh = height/2
+	nc = img1.size[0]
+	nr = img1.size[1]
+	one_plus_eps = 1.001   # To prevent rounding errors 
+
+	# Allocate memory for windows
+	imgdiff = [0. for i in range(width, height)]
+	gradx   = [0. for i in range(width, height)]
+	grady   = [0. for i in range(width, height)]
+
+	# Iteratively update the window position 
+	while True:
+
+		# If out of bounds, exit loop 
+		if x1-hw < 0. or nc-( x1+hw) < one_plus_eps or \
+			x2-hw < 0. or nc-(x2+hw) < one_plus_eps or \
+			y1-hh < 0. or nr-( y1+hh) < one_plus_eps or \
+			y2-hh < 0. or nr-(y2+hh) < one_plus_eps:
+			status = kltState.KLT_OOB
+			break
+
+		# Compute gradient and difference windows 
+		if lighting_insensitive:
+			_computeIntensityDifferenceLightingInsensitive(img1, img2, x1, y1, x2, y2, width, height, imgdiff)
+			_computeGradientSumLightingInsensitive(gradx1, grady1, gradx2, grady2, img1, img2, x1, y1, x2, y2, width, height, gradx, grady)
+		else:
+			_computeIntensityDifference(img1, img2, x1, y1, x2, y2, width, height, imgdiff)
+			_computeGradientSum(gradx1, grady1, gradx2, grady2, x1, y1, x2, y2, width, height, gradx, grady)
+
+		# Use these windows to construct matrices 
+		gxx, gxy, gyy = _compute2by2GradientMatrix(gradx, grady, width, height)
+		ex, ey = _compute2by1ErrorVector(imgdiff, gradx, grady, width, height, step_factor)
+
+		# Using matrices, solve equation for new displacement */
+		status, dx, dy = _solveEquation(gxx, gxy, gyy, ex, ey, small)
+		if status == kltState.KLT_SMALL_DET: break
+
+		x2 += dx
+		y2 += dy
+		iteration += 1
+
+		if not ((fabs(dx)>=th or fabs(dy)>=th) and iteration < max_iterations): break
+
+	# Check whether window is out of bounds 
+	if x2-hw < 0.0 or nc-(x2+hw) < one_plus_eps or y2-hh < 0.0 or nr-(y2+hh) < one_plus_eps:
+		status = kltState.KLT_OOB
+
+	# Check whether residue is too large 
+	if status == kltState.KLT_TRACKED:
+		if lighting_insensitive:
+			_computeIntensityDifferenceLightingInsensitive(img1, img2, x1, y1, x2, y2, width, height, imgdiff)
+	  	else:
+			_computeIntensityDifference(img1, img2, x1, y1, x2, y2, width, height, imgdiff)
+		if _sumAbsFloatWindow(imgdiff, width, height)/(width*height) > max_residue:
+			status = kltState.KLT_LARGE_RESIDUE
+
+	# Return appropriate value 
+	if status == kltState.KLT_SMALL_DET: return kltState.KLT_SMALL_DET, x2, y2
+	elif status == kltState.KLT_OOB: return kltState.KLT_OOB, x2, y2
+	elif status == kltState.KLT_LARGE_RESIDUE: return kltState.KLT_LARGE_RESIDUE, x2, y2
+	elif iteration >= max_iterations: return kltState.KLT_MAX_ITERATIONS, x2, y2
+	else: return kltState.KLT_TRACKED, x2, y2
+
+
+
+
+#*********************************************************************
+
+def _outOfBounds(x, y, ncols, nrows, borderx, bordery):
+	return x < borderx or x > ncols-1-borderx or y < bordery or y > nrows-1-bordery
+
+#*********************************************************************
 #* KLTTrackFeatures
 #*
 #* Tracks feature points from one image to the next.
@@ -256,9 +362,6 @@ def KLTTrackFeatures(tc, img1, img2, featurelist):
 						feat.aff_x = -1.0;
 						feat.aff_y = -1.0;
 						# free image and gradient for lost feature
-						_KLTFreeFloatImage(feat.aff_img);
-						_KLTFreeFloatImage(feat.aff_img_gradx);
-						_KLTFreeFloatImage(feat.aff_img_grady);
 						feat.aff_img = None
 						feat.aff_img_gradx = None
 						feat.aff_img_grady = None
