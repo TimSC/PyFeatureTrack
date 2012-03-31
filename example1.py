@@ -7,19 +7,19 @@
 
 #include "pnmio.h"
 from klt import *
+from PIL import Image
 
 if __name__=="__main__":
 
 	tc = KLT_TrackingContext()
-	fl = KLT_FeatureList()
 	nFeatures = 100
-	#ncols, nrows
-
+	fl = KLT_FeatureList(nFeatures)
+	
 	KLTPrintTrackingContext(tc)
-	#fl = KLTCreateFeatureList(nFeatures)
 
-	#img1 = pgmReadFile("img0.pgm", NULL, &ncols, &nrows)
-	#img2 = pgmReadFile("img1.pgm", NULL, &ncols, &nrows)
+	img1 = Image.open("img0.pgm")
+	img2 = Image.open("img1.pgm")
+	ncols, nrows = img1.size
 
 	#KLTSelectGoodFeatures(tc, img1, ncols, nrows, fl)
 

@@ -171,7 +171,6 @@ class KLT_TrackingContext:
 		for i in range(1,num_levels):
 			val = (float(n_invalid_pixels) + pyramid_gauss_hw) / ss
 			n_invalid_pixels = int(val + 0.99)  # Round up
-			print "x",n_invalid_pixels
 	
 		# ss_power = ss^(num_levels-1) 
 		ss_power = 1
@@ -188,10 +187,11 @@ class KLT_TrackingContext:
 
 #*********************************************************************
 #* NOTE:  Manually must ensure consistency with _KLTComputePyramid()
-#*/
+#*
  
 def _pyramidSigma(tc):
 	return (tc.pyramid_sigma_fact * tc.subsampling)
+
 
   #Available to user
   #int mindist		# min distance b/w features
@@ -242,27 +242,27 @@ def _pyramidSigma(tc):
   #void *pyramid_last_grady;
 #KLT_TrackingContextRec, *KLT_TrackingContext;
 
-class KLT_FeatureRec:
-  pass
-  #KLT_locType x;
-  #KLT_locType y;
-  #int val;	
-  #/* for affine mapping */
-  #_KLT_FloatImage aff_img; 
-  #_KLT_FloatImage aff_img_gradx;
-  #_KLT_FloatImage aff_img_grady;
-  #KLT_locType aff_x;
-  #KLT_locType aff_y;
-  #KLT_locType aff_Axx;
-  #KLT_locType aff_Ayx;
-  #KLT_locType aff_Axy;
-  #KLT_locType aff_Ayy;
+class KLT_Feature:
+	def __init__(self):
+		x = None
+		y = None
+		val = None
+		# for affine mapping
+		aff_img = None
+		aff_img_gradx = None
+		aff_img_grady = None
+		aff_x = None
+		aff_y = None
+		aff_Axx = None
+		aff_Ayx = None
+		aff_Axy = None
+		aff_Ayy = None
 # KLT_FeatureRec, *KLT_Feature;
 
 class KLT_FeatureList:
-  pass
-  #int nFeatures;
-  #KLT_Feature *feature;
+	def __init__(self, nFeatures):
+		self.nFeatures = nFeatures
+		self.feature = [KLT_Feature() for i in range(self.nFeatures)]
 #KLT_FeatureListRec, *KLT_FeatureList;
 
 class KLT_FeatureHistory:
