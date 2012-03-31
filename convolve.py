@@ -121,8 +121,10 @@ def _convolveImageHoriz(imgin,kernel):
 		# Convolve middle columns with kernel 
 		for i in range(radius,ncols - radius):
 			sumv = 0.0
+			ind = 0
 			for k in range(kernel.width-1,-1,-1):
-				sumv += imginl[i+k-radius,j] * kernel.data[k]
+				sumv += imginl[i+ind-radius,j] * kernel.data[k]
+				ind += 1
 			imgoutl[i,j] = sumv
 		
 
@@ -167,8 +169,10 @@ def _convolveImageVert(imgin, kernel):
 		for j in range(radius,nrows - radius):
 
 			sumv = 0.
+			ind = 0
 			for k in range(kernel.width-1,-1,-1):
-				sumv += imginl[i,j+k-radius] * kernel.data[k]
+				sumv += imginl[i,j+ind-radius] * kernel.data[k]
+				ind += 1
 			imgoutl[i,j] = sumv
 
 		# Zero bottommost rows 

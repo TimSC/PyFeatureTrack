@@ -13,11 +13,11 @@ from writeFeatures import *
 from trackFeatures import *
 import pickle
 
-if 0:
+if __name__=="__main__":
 	tc = KLT_TrackingContext()
-	nFeatures = 100
+	nFeatures = 1
 	
-	KLTPrintTrackingContext(tc)
+	#KLTPrintTrackingContext(tc)
 
 	img1 = Image.open("img0.pgm")
 	img2 = Image.open("img1.pgm")
@@ -25,6 +25,7 @@ if 0:
 
 	fl = KLTSelectGoodFeatures(tc, img1, nFeatures)
 
+	tc.writeInternalImages = True
 	print "\nIn first image:"
 	for i, feat in enumerate(fl):
 		print "Feature #{0}:  ({1},{2}) with value of {3}".format(i, feat.x, feat.y, feat.val)
@@ -32,18 +33,17 @@ if 0:
 	KLTWriteFeatureListToPPM(fl, img1, "feat1.ppm")
 	#KLTWriteFeatureList(fl, "feat1.txt", "%3d")
 
-	pickle.dump(tc, open("context.dat","w"))
-	pickle.dump(fl, open("featurelist.dat","w"))
+	#pickle.dump(tc, open("context.dat","w"))
+	#pickle.dump(fl, open("featurelist.dat","w"))
 
-if __name__=="__main__":
-	img1 = Image.open("img0.pgm")
-	img2 = Image.open("img1.pgm")
+	#img1 = Image.open("img0.pgm")
+	#img2 = Image.open("img1.pgm")
 
-	tc = pickle.load(open("context.dat"))
-	tc.writeInternalImages = True
+	#tc = pickle.load(open("context.dat"))
+	#tc.writeInternalImages = True
 	#KLTPrintTrackingContext(tc)
 
-	fl = pickle.load(open("featurelist.dat"))
+	#fl = pickle.load(open("featurelist.dat"))
 
 	KLTTrackFeatures(tc, img1, img2, fl)
 

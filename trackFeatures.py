@@ -244,8 +244,8 @@ def _compute2by1ErrorVector(imgdiff,
 	step_factor): # 2.0 comes from equations, 1.0 seems to avoid overshooting
 
 	# Compute values
-	ex = 0
-	ey = 0
+	ex = 0.
+	ey = 0.
 	ind = 0
 	for i in range(width * height):
 		diff = imgdiff[ind]
@@ -384,6 +384,7 @@ def _trackFeature(
 			imgdiff = _computeIntensityDifferenceLightingInsensitive(img1, img2, x1, y1, x2, y2, width, height)
 	  	else:
 			imgdiff = _computeIntensityDifference(img1, img2, x1, y1, x2, y2, width, height)
+
 		if _sumAbsFloatWindow(imgdiff, width, height)/(width*height) > max_residue:
 			status = kltState.KLT_LARGE_RESIDUE
 
@@ -609,7 +610,7 @@ def KLTTrackFeatures(tc, img1, img2, featurelist):
 					glob_index = indx
 
 				if feat.aff_img is None:
-					#save image and gradient for each feature at finest resolution after first successful track */
+					#save image and gradient for each feature at finest resolution after first successful track
 					feat.aff_img = _KLTCreateFloatImage((tc.affine_window_width+border), (tc.affine_window_height+border))
 					feat.aff_img_gradx = _KLTCreateFloatImage((tc.affine_window_width+border), (tc.affine_window_height+border))
 					feat.aff_img_grady = _KLTCreateFloatImage((tc.affine_window_width+border), (tc.affine_window_height+border))
