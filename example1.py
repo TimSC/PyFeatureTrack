@@ -8,12 +8,13 @@
 #include "pnmio.h"
 from klt import *
 from PIL import Image
+from selectGoodFeatures import *
 
 if __name__=="__main__":
 
 	tc = KLT_TrackingContext()
 	nFeatures = 100
-	fl = KLT_FeatureList(nFeatures)
+	#fl = KLT_FeatureList(nFeatures)
 	
 	KLTPrintTrackingContext(tc)
 
@@ -21,7 +22,7 @@ if __name__=="__main__":
 	img2 = Image.open("img1.pgm")
 	ncols, nrows = img1.size
 
-	#KLTSelectGoodFeatures(tc, img1, ncols, nrows, fl)
+	KLTSelectGoodFeatures(tc, img1, nFeatures)
 
 	#printf("\nIn first image:\n")
 	#for (i = 0 ; i < fl->nFeatures ; i++):
