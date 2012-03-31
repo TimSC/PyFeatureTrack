@@ -62,13 +62,13 @@ class KLTPyramid:
 			oldncols = ncols
 			ncols /= subsampling
 			nrows /= subsampling
+			subsampImg = Image.new("F",(ncols,nrows))
+			subsampImgL = subsampImg.load()
 			for y in range(nrows):
 				for x in range(ncols):
-					subsampImg = Image.new("F",(ncols,nrows))
-					subsampImgL = subsampImg.load()
 					subsampImgL[x,y] = tmpimgL[subsampling*x+subhalf, subsampling*y+subhalf]
 						#tmpimg->data[(subsampling*y+subhalf)*oldncols + (subsampling*x+subhalf)]
-					self.img[i] = subsampImg
+			self.img[i] = subsampImg
 
 			# Reassign current image 
 			currimg = self.img[i]

@@ -289,7 +289,7 @@ def _sumAbsFloatWindow(fw, width, height):
 	sum = 0.
 	fwind = 0
 
-	for h in range(height,-1,-1):
+	for h in range(height,0,-1):
 		for w in range(width):
 			sum += float(abs(fw[fwind]))
 			fwind += 1
@@ -372,7 +372,7 @@ def _trackFeature(
 		y2 += dy
 		iteration += 1
 
-		if not ((fabs(dx)>=th or fabs(dy)>=th) and iteration < max_iterations): break
+		if not ((abs(dx)>=th or abs(dy)>=th) and iteration < max_iterations): break
 
 	# Check whether window is out of bounds 
 	if x2-hw < 0.0 or nc-(x2+hw) < one_plus_eps or y2-hh < 0.0 or nr-(y2+hh) < one_plus_eps:

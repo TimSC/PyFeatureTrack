@@ -47,13 +47,11 @@ if __name__=="__main__":
 
 	KLTTrackFeatures(tc, img1, img2, fl)
 
-	#printf("\nIn second image:\n");
-	#for (i = 0 ; i < fl->nFeatures ; i++)
-	#	printf("Feature #%d:  (%f,%f) with value of %d\n",
-	#	i, fl->feature[i]->x, fl->feature[i]->y,
-	#	fl->feature[i]->val)
+	#print "\nIn second image:"
+	#for i, feat in enumerate(fl):
+	#	print "Feature #{0}:  ({1},{2}) with value of {3}".format(i, feat.x, feat.y, feat.val)
 
-	#KLTWriteFeatureListToPPM(fl, img2, ncols, nrows, "feat2.ppm")
+	KLTWriteFeatureListToPPM(fl, img2, "feat2.ppm")
 	#KLTWriteFeatureList(fl, "feat2.fl", NULL)      # binary file 
 	#KLTWriteFeatureList(fl, "feat2.txt", "%5.1f")  # text file   
 
