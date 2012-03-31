@@ -78,27 +78,23 @@ def KLTTrackFeatures(tc, img1, img2, featurelist):
 		#floatimg1 = Image.new("F", img1.size)
 		tmpimg = img1.convert("F")
 		floatimg1 = KLTComputeSmoothedImage(tmpimg, KLTComputeSmoothSigma(tc))
-		pyramid1 = _KLTCreatePyramid(ncols, nrows, int(subsampling), tc.nPyramidLevels)
-		_KLTComputePyramid(floatimg1, pyramid1, tc.pyramid_sigma_fact)
-		pyramid1_gradx = _KLTCreatePyramid(ncols, nrows, int(subsampling), tc.nPyramidLevels)
-		pyramid1_grady = _KLTCreatePyramid(ncols, nrows, int(subsampling), tc.nPyramidLevels)
+		pyramid1 = KLTPyramid(ncols, nrows, int(subsampling), tc.nPyramidLevels)
+		pyramid1.Compute(floatimg1, tc.pyramid_sigma_fact)
+		pyramid1_gradx = KLTPyramid(ncols, nrows, int(subsampling), tc.nPyramidLevels)
+		pyramid1_grady = KLTPyramid(ncols, nrows, int(subsampling), tc.nPyramidLevels)
 		for i in range(tc.nPyramidLevels):
-			_KLTComputeGradients(pyramid1.img[i], tc.grad_sigma, 
-			pyramid1_gradx.img[i],
-			pyramid1_grady.img[i])
+			pyramid1_gradx.img[i],pyramid1_grady.img[i] = KLTComputeGradients(pyramid1.img[i], tc.grad_sigma)
 
 	# Do the same thing with second image
 	#floatimg2 = _KLTCreateFloatImage(ncols, nrows)
 	tmpimg = img2.convert("F")
 	floatimg2 = KLTComputeSmoothedImage(tmpimg, KLTComputeSmoothSigma(tc))
-	pyramid2 = _KLTCreatePyramid(ncols, nrows, int(subsampling), tc.nPyramidLevels)
-	_KLTComputePyramid(floatimg2, pyramid2, tc.pyramid_sigma_fact)
-	pyramid2_gradx = _KLTCreatePyramid(ncols, nrows, int(subsampling), tc.nPyramidLevels)
-	pyramid2_grady = _KLTCreatePyramid(ncols, nrows, int(subsampling), tc.nPyramidLevels)
+	pyramid2 = KLTPyramid(ncols, nrows, int(subsampling), tc.nPyramidLevels)
+	pyramid2.Compute(floatimg2, tc.pyramid_sigma_fact)
+	pyramid2_gradx = KLTPyramid(ncols, nrows, int(subsampling), tc.nPyramidLevels)
+	pyramid2_grady = KLTPyramid(ncols, nrows, int(subsampling), tc.nPyramidLevels)
 	for i in range(tc.nPyramidLevels):
-		_KLTComputeGradients(pyramid2.img[i], tc.grad_sigma, 
-		pyramid2_gradx.img[i],
-		pyramid2_grady.img[i])
+		pyramid2_gradx.img[i], pyramid2_grady.img[i] = KLTComputeGradients(pyramid2.img[i], tc.grad_sigma)
 
 	# Write internal images 
 	if tc.writeInternalImages:
