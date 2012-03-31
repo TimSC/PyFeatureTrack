@@ -8,8 +8,8 @@ from klt import *
 from error import *
 from convolve import *
 from pyramid import *
+from klt_util import *
 from PIL import Image
-
 
 #*********************************************************************
 #* _interpolate
@@ -492,12 +492,12 @@ def KLTTrackFeatures(tc, img1, img2, featurelist):
 	if tc.writeInternalImages:
 		#char fname[80];
 		for i in range(tc.nPyramidLevels):
-			pyramid1.img[i].save("kltimg_tf_i{0}.pgm".format(i))
-			pyramid1_gradx.img[i].save("kltimg_tf_i{0}_gx.pgm".format(i))
-			pyramid1_grady.img[i].save("kltimg_tf_i{0}_gy.pgm".format(i))
-			pyramid2.img[i].save("kltimg_tf_j{0}.pgm".format(i))
-			pyramid2_gradx.img[i].save("kltimg_tf_j{0}_gx.pgm".format(i))
-			pyramid2_grady.img[i].save("kltimg_tf_j{0}_gy.pgm".format(i))
+			KLTWriteFloatImageToPGM(pyramid1.img[i],"kltimg_tf_i{0}.pgm".format(i))
+			KLTWriteFloatImageToPGM(pyramid1_gradx.img[i],"kltimg_tf_i{0}_gx.pgm".format(i))
+			KLTWriteFloatImageToPGM(pyramid1_grady.img[i],"kltimg_tf_i{0}_gy.pgm".format(i))
+			KLTWriteFloatImageToPGM(pyramid2.img[i],"kltimg_tf_j{0}.pgm".format(i))
+			KLTWriteFloatImageToPGM(pyramid2_gradx.img[i],"kltimg_tf_j{0}_gx.pgm".format(i))
+			KLTWriteFloatImageToPGM(pyramid2_grady.img[i],"kltimg_tf_j{0}_gy.pgm".format(i))
 		
 	# For each feature, do ... 
 	for indx, feat in enumerate(featurelist):

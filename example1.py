@@ -40,6 +40,9 @@ if __name__=="__main__":
 	img2 = Image.open("img1.pgm")
 
 	tc = pickle.load(open("context.dat"))
+	tc.writeInternalImages = True
+	#KLTPrintTrackingContext(tc)
+
 	fl = pickle.load(open("featurelist.dat"))
 
 	KLTTrackFeatures(tc, img1, img2, fl)
