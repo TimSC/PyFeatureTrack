@@ -9,6 +9,7 @@
 from klt import *
 from PIL import Image
 from selectGoodFeatures import *
+from writeFeatures import *
 
 if __name__=="__main__":
 
@@ -27,7 +28,7 @@ if __name__=="__main__":
 	for i, feat in enumerate(fl):
 		print "Feature #{0}:  ({1},{2}) with value of {3}".format(i, feat.x, feat.y, feat.val)
   
-	#KLTWriteFeatureListToPPM(fl, img1, ncols, nrows, "feat1.ppm")
+	KLTWriteFeatureListToPPM(fl, img1, "feat1.ppm")
 	#KLTWriteFeatureList(fl, "feat1.txt", "%3d")
 
 	#KLTTrackFeatures(tc, img1, img2, ncols, nrows, fl)
@@ -42,6 +43,6 @@ if __name__=="__main__":
 	#KLTWriteFeatureList(fl, "feat2.fl", NULL)      # binary file 
 	#KLTWriteFeatureList(fl, "feat2.txt", "%5.1f")  # text file   
 
-	#return 0
+
 
 
