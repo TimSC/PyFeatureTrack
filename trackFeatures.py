@@ -10,6 +10,292 @@ from convolve import *
 from pyramid import *
 from PIL import Image
 
+
+#*********************************************************************
+#* _interpolate
+#* 
+#* Given a point (x,y) in an image, computes the bilinear interpolated 
+#* gray-level value of the point in the image.  
+#*
+
+def _interpolate(x, y, img):
+
+	xt = int(x)  # coordinates of top-left corner 
+	yt = int(y)
+	ax = float(x - xt)
+	ay = float(y - yt)
+	#float *ptr = img->data + (img->ncols*yt) + xt
+	imgl = img.load()
+	_DNDEBUG = False
+	ncols, nrows = img.size
+
+	if not _DNDEBUG:
+		if (xt<0 or yt<0 or xt>=ncols-1 or yt>=nrows-1):
+			print "(xt,yt)=({0},{1})  imgsize=({2},{3})\n(x,y)=({4},{5})  (ax,ay)=({6},{7})".format(
+				xt, yt, ncols, nrows, x, y, ax, ay)
+
+	assert xt >= 0 and yt >= 0 and xt <= ncols - 2 and yt <= nrows - 2
+
+	return ( (1-ax) * (1-ay) * imgl[xt,yt] + \
+		ax   * (1-ay) * imgl[xt+1,yt] + \
+		(1-ax) *   ay   * imgl[xt,yt+1] + \
+		ax   *   ay   * imgl[xt+1,yt+1] )
+
+#*********************************************************************
+#* _computeIntensityDifference
+#*
+#* Given two images and the window center in both images,
+#* aligns the images wrt the window and computes the difference 
+#* between the two overlaid images.
+#*
+
+def _computeIntensityDifference(img1,   # images 
+	img2,
+	x1, 
+	y1,     # center of window in 1st img
+	x2, 
+	y2,     # center of window in 2nd img
+	width, 
+	height):  # size of window
+
+	hw = width/2
+	hh = height/2
+	#float g1, g2;
+	#register int i, j;
+
+	imgdiff = []
+
+	# Compute values
+	for j in range(-hh, hh + 1):
+		for i in range(-hw, hw + 1):
+			g1 = _interpolate(x1+i, y1+j, img1)
+			g2 = _interpolate(x2+i, y2+j, img2)
+			imgdiff.append(g1 - g2)
+	
+	return imgdiff
+
+
+
+#*********************************************************************
+#* _computeGradientSum
+#*
+#* Given two gradients and the window center in both images,
+#* aligns the gradients wrt the window and computes the sum of the two 
+#* overlaid gradients.
+#*
+
+def _computeGradientSum(gradx1,  # gradient images
+	grady1,
+	gradx2,
+	grady2,
+	x1, y1,      # center of window in 1st img
+	x2,  y2,      # center of window in 2nd img
+	width, height):   # size of window
+
+	hw = width/2
+	hh = height/2
+	#float g1, g2;
+	#register int i, j;
+	gradx, grady = [], []
+
+	# Compute values
+	for j in range(-hh, hh + 1):
+		for i in range(-hw, hw + 1):
+			g1 = _interpolate(x1+i, y1+j, gradx1)
+			g2 = _interpolate(x2+i, y2+j, gradx2)
+			gradx.append(g1 + g2)
+			g1 = _interpolate(x1+i, y1+j, grady1)
+			g2 = _interpolate(x2+i, y2+j, grady2)
+			grady.append(g1 + g2)
+
+	return gradx, grady
+
+#*********************************************************************
+#* _computeIntensityDifferenceLightingInsensitive
+#*
+#* Given two images and the window center in both images,
+#* aligns the images wrt the window and computes the difference 
+#* between the two overlaid images; normalizes for overall gain and bias.
+#*
+
+#static void _computeIntensityDifferenceLightingInsensitive(
+#  _KLT_FloatImage img1,   /* images */
+#  _KLT_FloatImage img2,
+#  float x1, float y1,     /* center of window in 1st img */
+#  float x2, float y2,     /* center of window in 2nd img */
+#  int width, int height,  /* size of window */
+#  _FloatWindow imgdiff)   /* output */
+#{
+#  register int hw = width/2, hh = height/2;
+#  float g1, g2, sum1_squared = 0, sum2_squared = 0;
+#  register int i, j;
+#  
+#  float sum1 = 0, sum2 = 0;
+#  float mean1, mean2,alpha,belta;
+#  /* Compute values */
+#  for (j = -hh ; j <= hh ; j++)
+#    for (i = -hw ; i <= hw ; i++)  {
+#      g1 = _interpolate(x1+i, y1+j, img1);
+#      g2 = _interpolate(x2+i, y2+j, img2);
+#      sum1 += g1;    sum2 += g2;
+#      sum1_squared += g1*g1;
+#      sum2_squared += g2*g2;
+#   }
+#  mean1=sum1_squared/(width*height);
+#  mean2=sum2_squared/(width*height);
+#  alpha = (float) sqrt(mean1/mean2);
+#  mean1=sum1/(width*height);
+#  mean2=sum2/(width*height);
+#  belta = mean1-alpha*mean2;
+#
+#  for (j = -hh ; j <= hh ; j++)
+#    for (i = -hw ; i <= hw ; i++)  {
+#      g1 = _interpolate(x1+i, y1+j, img1);
+#      g2 = _interpolate(x2+i, y2+j, img2);
+#      *imgdiff++ = g1- g2*alpha-belta;
+#    } 
+#}
+
+
+#*********************************************************************
+#* _computeGradientSumLightingInsensitive
+#*
+#* Given two gradients and the window center in both images,
+#* aligns the gradients wrt the window and computes the sum of the two 
+#* overlaid gradients; normalizes for overall gain and bias.
+#*
+
+#static void _computeGradientSumLightingInsensitive(
+#  _KLT_FloatImage gradx1,  /* gradient images */
+#  _KLT_FloatImage grady1,
+#  _KLT_FloatImage gradx2,
+#  _KLT_FloatImage grady2,
+#  _KLT_FloatImage img1,   /* images */
+#  _KLT_FloatImage img2,
+# 
+#  float x1, float y1,      /* center of window in 1st img */
+#  float x2, float y2,      /* center of window in 2nd img */
+#  int width, int height,   /* size of window */
+#  _FloatWindow gradx,      /* output */
+#  _FloatWindow grady)      /*   " */
+#{
+#  register int hw = width/2, hh = height/2;
+#  float g1, g2, sum1_squared = 0, sum2_squared = 0;
+#  register int i, j;
+#  
+#  float sum1 = 0, sum2 = 0;
+#  float mean1, mean2, alpha;
+#  for (j = -hh ; j <= hh ; j++)
+#    for (i = -hw ; i <= hw ; i++)  {
+#      g1 = _interpolate(x1+i, y1+j, img1);
+#      g2 = _interpolate(x2+i, y2+j, img2);
+#      sum1_squared += g1;    sum2_squared += g2;
+#    }
+#  mean1 = sum1_squared/(width*height);
+#  mean2 = sum2_squared/(width*height);
+#  alpha = (float) sqrt(mean1/mean2);
+#  
+#  /* Compute values */
+#  for (j = -hh ; j <= hh ; j++)
+#    for (i = -hw ; i <= hw ; i++)  {
+#      g1 = _interpolate(x1+i, y1+j, gradx1);
+#      g2 = _interpolate(x2+i, y2+j, gradx2);
+#      *gradx++ = g1 + g2*alpha;
+#      g1 = _interpolate(x1+i, y1+j, grady1);
+#      g2 = _interpolate(x2+i, y2+j, grady2);
+#      *grady++ = g1+ g2*alpha;
+#    }  
+#}
+
+#*********************************************************************
+#* _compute2by2GradientMatrix
+#*
+#*
+
+def _compute2by2GradientMatrix(gradx, grady,
+	width,   # size of window */
+	height):
+
+	# Compute values 
+	gxx = 0.0
+	gxy = 0.0
+	gyy = 0.0
+	ind = 0
+	for i in range(width * height):
+		gx = gradx[ind]
+		gy = grady[ind]
+		gxx += gx*gx;
+		gxy += gx*gy;
+		gyy += gy*gy;
+		ind += 1
+
+	return gxx, gxy, gyy
+	
+#*********************************************************************
+#* _compute2by1ErrorVector
+#*
+#*
+
+def _compute2by1ErrorVector(imgdiff,
+	gradx,
+	grady,
+	width, # size of window
+	height,
+	step_factor): # 2.0 comes from equations, 1.0 seems to avoid overshooting
+
+	# Compute values
+	ex = 0
+	ey = 0
+	ind = 0
+	for i in range(width * height):
+		diff = imgdiff[ind]
+		ex += diff * gradx[ind]
+		ey += diff * grady[ind]
+		ind += 1
+
+	ex *= step_factor
+	ey *= step_factor
+
+	return ex, ey
+
+#*********************************************************************
+#* _solveEquation
+#*
+#* Solves the 2x2 matrix equation
+#*         [gxx gxy] [dx] = [ex]
+#*         [gxy gyy] [dy] = [ey]
+#* for dx and dy.
+#*
+#* Returns KLT_TRACKED on success and KLT_SMALL_DET on failure
+#*
+
+def _solveEquation(gxx, gxy, gyy,
+	ex, ey,
+	small):
+
+	det = gxx*gyy - gxy*gxy
+	
+	if det < small: return kltState.KLT_SMALL_DET, None, None
+
+	dx = (gyy*ex - gxy*ey)/det
+	dy = (gxx*ey - gxy*ex)/det
+	return kltState.KLT_TRACKED, dx, dy
+
+#*********************************************************************
+#* _sumAbsFloatWindow
+#*
+
+def _sumAbsFloatWindow(fw, width, height):
+	sum = 0.
+	fwind = 0
+
+	for h in range(height,-1,-1):
+		for w in range(width):
+			sum += float(abs(fw[fwind]))
+			fwind += 1
+
+	return sum
+
 #*********************************************************************
 #* _trackFeature
 #*
@@ -51,9 +337,9 @@ def _trackFeature(
 	one_plus_eps = 1.001   # To prevent rounding errors 
 
 	# Allocate memory for windows
-	imgdiff = [0. for i in range(width, height)]
-	gradx   = [0. for i in range(width, height)]
-	grady   = [0. for i in range(width, height)]
+	#imgdiff = [0. for i in range(width, height)]
+	#gradx   = [0. for i in range(width, height)]
+	#grady   = [0. for i in range(width, height)]
 
 	# Iteratively update the window position 
 	while True:
@@ -68,11 +354,11 @@ def _trackFeature(
 
 		# Compute gradient and difference windows 
 		if lighting_insensitive:
-			_computeIntensityDifferenceLightingInsensitive(img1, img2, x1, y1, x2, y2, width, height, imgdiff)
-			_computeGradientSumLightingInsensitive(gradx1, grady1, gradx2, grady2, img1, img2, x1, y1, x2, y2, width, height, gradx, grady)
+			imgdiff = _computeIntensityDifferenceLightingInsensitive(img1, img2, x1, y1, x2, y2, width, height)
+			gradx, grady = _computeGradientSumLightingInsensitive(gradx1, grady1, gradx2, grady2, img1, img2, x1, y1, x2, y2, width, height)
 		else:
-			_computeIntensityDifference(img1, img2, x1, y1, x2, y2, width, height, imgdiff)
-			_computeGradientSum(gradx1, grady1, gradx2, grady2, x1, y1, x2, y2, width, height, gradx, grady)
+			imgdiff = _computeIntensityDifference(img1, img2, x1, y1, x2, y2, width, height)
+			gradx, grady = _computeGradientSum(gradx1, grady1, gradx2, grady2, x1, y1, x2, y2, width, height)
 
 		# Use these windows to construct matrices 
 		gxx, gxy, gyy = _compute2by2GradientMatrix(gradx, grady, width, height)
@@ -95,9 +381,9 @@ def _trackFeature(
 	# Check whether residue is too large 
 	if status == kltState.KLT_TRACKED:
 		if lighting_insensitive:
-			_computeIntensityDifferenceLightingInsensitive(img1, img2, x1, y1, x2, y2, width, height, imgdiff)
+			imgdiff = _computeIntensityDifferenceLightingInsensitive(img1, img2, x1, y1, x2, y2, width, height)
 	  	else:
-			_computeIntensityDifference(img1, img2, x1, y1, x2, y2, width, height, imgdiff)
+			imgdiff = _computeIntensityDifference(img1, img2, x1, y1, x2, y2, width, height)
 		if _sumAbsFloatWindow(imgdiff, width, height)/(width*height) > max_residue:
 			status = kltState.KLT_LARGE_RESIDUE
 
