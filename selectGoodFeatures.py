@@ -1,5 +1,5 @@
 
-import math
+import math, numpy as np
 from PIL import Image
 from klt import *
 from error import *
@@ -167,6 +167,22 @@ def _minEigenvalue(gxx, gxy, gyy):
 
 #*********************************************************************
 
+def SumGradientInWindow(x,y,window_hh,window_hw,gradxl,gradyl):
+	# Sum the gradients in the surrounding window 
+	gxx = 0.
+	gxy = 0.
+	gyy = 0.
+	for yy in range(y-window_hh, y+window_hh+1):
+		for xx in range(x-window_hw, x+window_hw+1):
+			gx = gradxl[xx,yy]
+			gy = gradyl[xx,yy]
+			gxx += gx * gx;
+			gxy += gx * gy;
+			gyy += gy * gy;
+	return gxx, gxy, gyy
+
+#*********************************************************************
+
 def _KLTSelectGoodFeatures(tc,img,nFeatures,mode):
 
 	featurelist = [KLT_Feature() for i in range(nFeatures)]
@@ -262,18 +278,18 @@ def _KLTSelectGoodFeatures(tc,img,nFeatures,mode):
 	for y in range(bordery, nrows - bordery):
 		for x in range(borderx, ncols - borderx):
 			# Sum the gradients in the surrounding window 
-			gxx = 0
-			gxy = 0
-			gyy = 0
-			for yy in range(y-window_hh, y+window_hh+1):
-				for xx in range(x-window_hw, x+window_hw+1):
-					#gx = *(gradx->data + ncols*yy+xx);
-					gx = gradxl[xx,yy]
-					#gy = *(grady->data + ncols*yy+xx);
-					gy = gradyl[xx,yy]
-					gxx += gx * gx;
-					gxy += gx * gy;
-					gyy += gy * gy;
+			#gxx = 0
+			#gxy = 0
+			#gyy = 0
+			#for yy in range(y-window_hh, y+window_hh+1):
+			#	for xx in range(x-window_hw, x+window_hw+1):
+			#		gx = gradxl[xx,yy]
+			#		gy = gradyl[xx,yy]
+			#		gxx += gx * gx;
+			#		gxy += gx * gy;
+			#		gyy += gy * gy;
+
+			gxx, gxy, gyy = SumGradientInWindow(x,y,window_hh,window_hw,gradxl,gradyl)
 
 			# Store the trackability of the pixel as the minimum
 			# of the two eigenvalues 

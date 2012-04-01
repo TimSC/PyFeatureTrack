@@ -18,14 +18,14 @@ from PIL import Image
 #* gray-level value of the point in the image.  
 #*
 
-def _interpolate(x, y, img):
+def _interpolate(x, y, img, imgl):
 
 	xt = int(x)  # coordinates of top-left corner 
 	yt = int(y)
 	ax = float(x - xt)
 	ay = float(y - yt)
 	#float *ptr = img->data + (img->ncols*yt) + xt
-	imgl = img.load()
+
 	_DNDEBUG = False
 	ncols, nrows = img.size
 
@@ -64,12 +64,14 @@ def _computeIntensityDifference(img1,   # images
 	#register int i, j;
 
 	imgdiff = []
+	imgl1 = img1.load()
+	imgl2 = img2.load()
 
 	# Compute values
 	for j in range(-hh, hh + 1):
 		for i in range(-hw, hw + 1):
-			g1 = _interpolate(x1+i, y1+j, img1)
-			g2 = _interpolate(x2+i, y2+j, img2)
+			g1 = _interpolate(x1+i, y1+j, img1, imgl1)
+			g2 = _interpolate(x2+i, y2+j, img2, imgl2)
 			imgdiff.append(g1 - g2)
 	
 	return imgdiff
@@ -98,14 +100,19 @@ def _computeGradientSum(gradx1,  # gradient images
 	#register int i, j;
 	gradx, grady = [], []
 
+	gradx1l = gradx1.load()
+	grady1l = grady1.load()
+	gradx2l = gradx2.load()
+	grady2l = grady2.load()
+
 	# Compute values
 	for j in range(-hh, hh + 1):
 		for i in range(-hw, hw + 1):
-			g1 = _interpolate(x1+i, y1+j, gradx1)
-			g2 = _interpolate(x2+i, y2+j, gradx2)
+			g1 = _interpolate(x1+i, y1+j, gradx1, gradx1l)
+			g2 = _interpolate(x2+i, y2+j, gradx2, gradx2l)
 			gradx.append(g1 + g2)
-			g1 = _interpolate(x1+i, y1+j, grady1)
-			g2 = _interpolate(x2+i, y2+j, grady2)
+			g1 = _interpolate(x1+i, y1+j, grady1, grady1l)
+			g2 = _interpolate(x2+i, y2+j, grady2, grady2l)
 			grady.append(g1 + g2)
 
 	return gradx, grady

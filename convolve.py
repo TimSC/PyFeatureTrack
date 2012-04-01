@@ -8,7 +8,7 @@ try:
 	import scipy.ndimage
 	useScipyConvolution = True
 except:
-	print "Warning: Failed to import scipy"
+	print "Warning: Failed to import scipy.ndimage"
 
 class ConvolutionKernel:
 	def __init__(self, maxKernelWidth = 71):
