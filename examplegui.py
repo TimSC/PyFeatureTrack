@@ -2,9 +2,9 @@
 
 #Note check this out: http://johnroach.info/2011/03/02/image-capturing-from-webcam-using-opencv-and-pygame-in-python/
 
-import pygtk, math, array
+import pygtk, math, array, numpy as np
 pygtk.require('2.0')
-import gtk, gobject, cv, cairo, opencv
+import gtk, gobject, cv, cairo, opencv, multiprocessing, time
 from PIL import Image
 
 import klt, selectGoodFeatures, writeFeatures, trackFeatures
@@ -13,6 +13,79 @@ def IplToPilImg(imIpl):
 	assert imIpl.nChannels == 3
 	imgSize = cv.GetSize(imIpl)
 	return Image.fromstring("RGB", cv.GetSize(imIpl), imIpl.tostring(), 'raw', "BGR")
+
+class WebcamWidget(gtk.Invisible):
+
+	def __init__(self):
+		gtk.Invisible.__init__(self)
+
+		self.pipeParent, pipeChile = multiprocessing.Pipe()
+		self.buffer = []
+		self.maxBufferSize = 100
+		self.count = 0
+
+		gobject.timeout_add(int(round(1000./25.)), self.UpdatePipe)
+		self.p = multiprocessing.Process(target=self.PollCamera, args=(pipeChile,))
+		self.p.start()
+
+	def __del__(self):
+		pass
+		#self.Stop()
+
+	def Stop(self):
+		self.pipeParent.send(("STOP",))
+		self.p.terminate()
+
+	def GetCurrentImg(self):
+		if len(self.buffer) == 0:
+			return None
+		return self.buffer[-1]
+
+	def GetFrameNum(self):
+		return self.count
+
+	def UpdatePipe(self):
+
+		while self.pipeParent.poll():
+			pipeData = self.pipeParent.recv()
+			ty = pipeData[0]
+			if ty == "FRAME": 
+				img = pipeData[1]
+				self.buffer.append(img)
+				self.count += 1
+			while len(self.buffer) > self.maxBufferSize:
+				self.buffer.pop(0)
+			#print ty, len(self.buffer)
+
+		return True
+
+	def PollCamera(self, pipe):
+		running = True
+		cap = cv.CaptureFromCAM(-1)
+		capture_size = (320,200)
+		cv.SetCaptureProperty(cap, cv.CV_CAP_PROP_FRAME_WIDTH, capture_size[0])
+		cv.SetCaptureProperty(cap, cv.CV_CAP_PROP_FRAME_HEIGHT, capture_size[1])
+
+		#fps = cv.GetCaptureProperty(cap, cv.CV_CAP_PROP_FPS)
+
+		while (running):
+			while pipe.poll():
+				pipeData = pipe.recv()
+				#print "Worker",pipeData[0]
+				if pipeData[0] == "STOP":
+					running = False
+					continue
+
+			imIpl = cv.QueryFrame(cap)
+			if imIpl is not None:
+				pilImg = IplToPilImg(imIpl)
+				#print pilImg
+				pipe.send(("FRAME",np.array(pilImg)))
+			time.sleep(1./25.)
+
+		pipe.send(("STOPPED",))	
+		
+		return True
 
 class VisualiseWidget(gtk.DrawingArea):
 	def __init__(self):
@@ -76,12 +149,11 @@ class VisualiseWidget(gtk.DrawingArea):
 
 class Base:
 	def __init__(self):
-		self.cap = cv.CaptureFromCAM(-1)
+		
 		self.tc = klt.KLT_TrackingContext()
 		self.fl = []
-		capture_size = (320,200)
-		cv.SetCaptureProperty(self.cap, cv.CV_CAP_PROP_FRAME_WIDTH, capture_size[0])
-		cv.SetCaptureProperty(self.cap, cv.CV_CAP_PROP_FRAME_HEIGHT, capture_size[1])
+		self.webcam = WebcamWidget()
+		self.showingFrame = None
 
 		#Create main window
 		self.window = gtk.Window(gtk.WINDOW_TOPLEVEL)
@@ -96,13 +168,15 @@ class Base:
 
 		self.window.show_all()
 
-		gobject.timeout_add(int(round(1000./1.)), self.UpdateImage)
+		gobject.timeout_add(int(round(1000./25.)), self.UpdateImage)
 
 	def delete_event(self, widget, event, data=None):
+		self.webcam.Stop()
 		print "delete event occurred"
 		return False
 
 	def destroy(self, widget, data=None):
+		print "destroy window"
 		gtk.main_quit()
 
 	def main(self):
@@ -112,11 +186,19 @@ class Base:
 		#print "x"
 		#cv.GrabFrame(self.cap)
 		#imIpl = cv.RetrieveFrame(self.cap)
+		if self.showingFrame != self.webcam.GetFrameNum():
+			img = self.webcam.GetCurrentImg()
+			if img is not None:		
+				self.visArea.SetImageByPil(Image.fromarray(img))
+				self.visArea.RedrawCanvas()
+			self.showingFrame = self.webcam.GetFrameNum()
+
+		return True
 
 		imIpl = cv.QueryFrame(self.cap)
 		
 		pilImg = IplToPilImg(imIpl)
-		if 1:
+		if 0:
 			nFeatures = 50
 			countActive = klt.KLTCountRemainingFeatures(self.fl)
 			if countActive == 0:
