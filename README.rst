@@ -1,7 +1,7 @@
 .. -*- mode: rst -*-
 
-scikit-learn
-============
+PyFeatureTracker
+================
 
 A python implementation of the Kanade-Lucas-Tomasi feature tracker. 
 
