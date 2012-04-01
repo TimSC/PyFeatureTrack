@@ -4,13 +4,21 @@
 
 import pygtk, math, array
 pygtk.require('2.0')
-import gtk, gobject, cv, cairo
+import gtk, gobject, cv, cairo, opencv
 from PIL import Image
+
+import klt, selectGoodFeatures, writeFeatures, trackFeatures
+
+def IplToPilImg(imIpl):
+	assert imIpl.nChannels == 3
+	imgSize = cv.GetSize(imIpl)
+	return Image.fromstring("RGB", cv.GetSize(imIpl), imIpl.tostring(), 'raw', "BGR")
 
 class VisualiseWidget(gtk.DrawingArea):
 	def __init__(self):
 		gtk.DrawingArea.__init__(self)
 		self.image = None
+		self.trackerPos = []
 		self.set_size_request(100,100)
 		self.connect("expose_event", self.expose)
         
@@ -44,14 +52,19 @@ class VisualiseWidget(gtk.DrawingArea):
 				0.)
 			context.paint()
 
+		#Draw tracker points
+		context.save()
+		context.set_source_rgb(0, 1, 0) 
+		for pt in self.trackerPos:
+			context.arc(pt[0], pt[1], 2., 0. * math.pi, 2. * math.pi)
+			context.fill()
+		context.restore()
+
 	def SetImageByIpl(self,imIpl):
-		assert imIpl.nChannels == 3
-
 		#Convert IPL image to PIL image
-		imgSize = cv.GetSize(imIpl)
-		pilImg = Image.fromstring("RGB", cv.GetSize(imIpl), imIpl.tostring(), 'raw', "BGR")
-		self.SetImageByPil(pilImg)
-
+		#pilImg = opencv.adaptors.Ipl2PIL(imIpl)
+		self.SetImageByPil(IplToPilImg(imIpl))
+		
 	def SetImageByPil(self, pilImg):
 		
 		#Convert PIL image to cairo surface
@@ -64,6 +77,8 @@ class VisualiseWidget(gtk.DrawingArea):
 class Base:
 	def __init__(self):
 		self.cap = cv.CaptureFromCAM(-1)
+		self.tc = klt.KLT_TrackingContext()
+		self.fl = []
 		capture_size = (320,200)
 		cv.SetCaptureProperty(self.cap, cv.CV_CAP_PROP_FRAME_WIDTH, capture_size[0])
 		cv.SetCaptureProperty(self.cap, cv.CV_CAP_PROP_FRAME_HEIGHT, capture_size[1])
@@ -81,7 +96,7 @@ class Base:
 
 		self.window.show_all()
 
-		gobject.timeout_add(1000./25., self.UpdateImage)
+		gobject.timeout_add(int(round(1000./1.)), self.UpdateImage)
 
 	def delete_event(self, widget, event, data=None):
 		print "delete event occurred"
@@ -99,9 +114,26 @@ class Base:
 		#imIpl = cv.RetrieveFrame(self.cap)
 
 		imIpl = cv.QueryFrame(self.cap)
+		
+		pilImg = IplToPilImg(imIpl)
+		if 1:
+			nFeatures = 50
+			countActive = klt.KLTCountRemainingFeatures(self.fl)
+			if countActive == 0:
+				self.fl = selectGoodFeatures.KLTSelectGoodFeatures(self.tc, pilImg, nFeatures)
+			else:
+				trackFeatures.KLTTrackFeatures(self.tc, self.prevImg, pilImg, self.fl)
 
-		self.visArea.SetImageByIpl(imIpl)
+			self.visArea.trackerPos = []
+			for pt in self.fl:
+				#print pt.x,pt.y,pt.val
+				if pt.val < 0: continue
+				self.visArea.trackerPos.append((pt.x,pt.y))
+
+		self.visArea.SetImageByPil(pilImg)
 		self.visArea.RedrawCanvas()
+
+		self.prevImg = pilImg
 		return True
 
 
