@@ -91,12 +91,12 @@ def _enforceMinimumDistance(pointlist, featurelist, ncols, nrows, mindist, min_e
 			  	indx = indx + 1
 			break
 
-		x = pointlist[pointlistIndx]
-		y = pointlist[pointlistIndx+1]
-		val = pointlist[pointlistIndx+2]
-		#print pointlistIndx, val, len(pointlist)
+		pointdata = pointlist[pointlistIndx]
+		x = pointdata[1]
+		y = pointdata[2]
+		val = pointdata[0]
 
-		pointlistIndx += 3
+		pointlistIndx += 1
 		
 		# Ensure that feature is in-bounds 
 		assert x >= 0
@@ -132,26 +132,6 @@ def _enforceMinimumDistance(pointlist, featurelist, ncols, nrows, mindist, min_e
 
 	return featurelist
 
-
-#*********************************************************************
-#* _sortPointList
-#*
-
-def _sortPointList(pointlist):
-
-	#This is probably grossly inefficient. Better to use numpy?
-	ptx = [pointlist[i] for i in range(0,len(pointlist),3)]
-	pty = [pointlist[i] for i in range(1,len(pointlist),3)]
-	pteig = [pointlist[i] for i in range(2,len(pointlist),3)]
-
-	li = zip(pteig, ptx, pty)
-	li.sort()
-	li.reverse()
-	out = []
-	for item in li:
-		out.extend((item[1],item[2],item[0]))
-	return out
-
 #*********************************************************************
 #* _minEigenvalue
 #*
@@ -162,7 +142,7 @@ def _sortPointList(pointlist):
 #*
 
 def _minEigenvalue(gxx, gxy, gyy):
-	return float((gxx + gyy - math.sqrt((gxx - gyy)*(gxx - gyy) + 4*gxy*gxy))/2.0)
+	return float((gxx + gyy - math.sqrt((gxx - gyy)*(gxx - gyy) + 4.*gxy*gxy))/2.)
 
 
 #*********************************************************************
@@ -175,20 +155,6 @@ def SumGradientInWindow(x,y,window_hh,window_hw,gradxl,gradyl):
 	gxy = (windowx * windowy).sum()
 	gyy = np.power(windowy,2.).sum()
 	return gxx, gxy, gyy
-
-	# Sum the gradients in the surrounding window 
-	#gxx = 0.
-	#gxy = 0.
-	#gyy = 0.
-	#for yy in range(y-window_hh, y+window_hh+1):
-	#	for xx in range(x-window_hw, x+window_hw+1):
-	#		#print gradxl.shape,xx,yy
-	#		gx = gradxl[yy,xx]
-	#		gy = gradyl[yy,xx]
-	#		gxx += gx * gx;
-	#		gxy += gx * gy;
-	#		gyy += gy * gy;
-	#return gxx, gxy, gyy
 
 #*********************************************************************
 
@@ -282,7 +248,7 @@ def _KLTSelectGoodFeatures(tc,img,nFeatures,mode):
 	gradyArr = np.array(grady)
 
 	# For most of the pixels in the image, do ... 
-	pointlist = []
+	pointlistx,pointlisty,pointlistval = [], [], []
 	npoints = 0
 	for y in range(bordery, nrows - bordery):
 		for x in range(borderx, ncols - borderx):
@@ -291,8 +257,8 @@ def _KLTSelectGoodFeatures(tc,img,nFeatures,mode):
 
 			# Store the trackability of the pixel as the minimum
 			# of the two eigenvalues 
-			pointlist.append(x)
-			pointlist.append(y)
+			pointlistx.append(x)
+			pointlisty.append(y)
 			val = _minEigenvalue(gxx, gxy, gyy);
 			#if val > limit:
 				#TWarning("(_KLTSelectGoodFeatures) minimum eigenvalue %f is "
@@ -300,14 +266,16 @@ def _KLTSelectGoodFeatures(tc,img,nFeatures,mode):
 				#           "to maximum value", val);
 				#val = (float) limit;
 			
-			pointlist.append(int(val))
+			pointlistval.append(int(val))
 			npoints = npoints + 1
 			x += tc.nSkippedPixels + 1
 
 		y += tc.nSkippedPixels + 1
 			
 	# Sort the features 
-	pointlist = _sortPointList(pointlist)
+	pointlist = zip(pointlistval, pointlistx, pointlisty)
+	pointlist.sort()
+	pointlist.reverse()
 
 	#print pointlist
 
