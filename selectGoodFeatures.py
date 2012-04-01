@@ -168,18 +168,27 @@ def _minEigenvalue(gxx, gxy, gyy):
 #*********************************************************************
 
 def SumGradientInWindow(x,y,window_hh,window_hw,gradxl,gradyl):
-	# Sum the gradients in the surrounding window 
-	gxx = 0.
-	gxy = 0.
-	gyy = 0.
-	for yy in range(y-window_hh, y+window_hh+1):
-		for xx in range(x-window_hw, x+window_hw+1):
-			gx = gradxl[xx,yy]
-			gy = gradyl[xx,yy]
-			gxx += gx * gx;
-			gxy += gx * gy;
-			gyy += gy * gy;
+	# Sum the gradients in the surrounding window with numpy
+	windowx = gradxl[y-window_hh: y+window_hh+1, x-window_hw: x+window_hw+1]
+	windowy = gradyl[y-window_hh: y+window_hh+1, x-window_hw: x+window_hw+1]
+	gxx = np.power(windowx,2.).sum()
+	gxy = (windowx * windowy).sum()
+	gyy = np.power(windowy,2.).sum()
 	return gxx, gxy, gyy
+
+	# Sum the gradients in the surrounding window 
+	#gxx = 0.
+	#gxy = 0.
+	#gyy = 0.
+	#for yy in range(y-window_hh, y+window_hh+1):
+	#	for xx in range(x-window_hw, x+window_hw+1):
+	#		#print gradxl.shape,xx,yy
+	#		gx = gradxl[yy,xx]
+	#		gy = gradyl[yy,xx]
+	#		gxx += gx * gx;
+	#		gxy += gx * gy;
+	#		gyy += gy * gy;
+	#return gxx, gxy, gyy
 
 #*********************************************************************
 
@@ -269,27 +278,16 @@ def _KLTSelectGoodFeatures(tc,img,nFeatures,mode):
 	#for (i = 0 ; i < sizeof(int) ; i++)  limit *= 256;
 	#limit = limit/2 - 1;
 		
-	gradxl = gradx.load()
-	gradyl = grady.load()
+	gradxArr = np.array(gradx)
+	gradyArr = np.array(grady)
 
 	# For most of the pixels in the image, do ... 
 	pointlist = []
 	npoints = 0
 	for y in range(bordery, nrows - bordery):
 		for x in range(borderx, ncols - borderx):
-			# Sum the gradients in the surrounding window 
-			#gxx = 0
-			#gxy = 0
-			#gyy = 0
-			#for yy in range(y-window_hh, y+window_hh+1):
-			#	for xx in range(x-window_hw, x+window_hw+1):
-			#		gx = gradxl[xx,yy]
-			#		gy = gradyl[xx,yy]
-			#		gxx += gx * gx;
-			#		gxy += gx * gy;
-			#		gyy += gy * gy;
 
-			gxx, gxy, gyy = SumGradientInWindow(x,y,window_hh,window_hw,gradxl,gradyl)
+			gxx, gxy, gyy = SumGradientInWindow(x,y,window_hh,window_hw,gradxArr,gradyArr)
 
 			# Store the trackability of the pixel as the minimum
 			# of the two eigenvalues 
