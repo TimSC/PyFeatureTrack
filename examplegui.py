@@ -4,7 +4,7 @@
 
 import pygtk, math, array, numpy as np
 pygtk.require('2.0')
-import gtk, gobject, cv, cairo, opencv, multiprocessing, time
+import gtk, gobject, cv, cairo, opencv, multiprocessing, time, Queue
 from PIL import Image
 
 import klt, selectGoodFeatures, writeFeatures, trackFeatures
@@ -19,13 +19,13 @@ class WebcamWidget(gtk.Invisible):
 	def __init__(self):
 		gtk.Invisible.__init__(self)
 
-		self.pipeParent, pipeChile = multiprocessing.Pipe()
+		self.toWorker, self.fromWorker = multiprocessing.Queue(), multiprocessing.Queue()
 		self.buffer = []
 		self.maxBufferSize = 100
 		self.count = 0
 
-		gobject.timeout_add(int(round(1000./25.)), self.UpdatePipe)
-		self.p = multiprocessing.Process(target=self.PollCamera, args=(pipeChile,))
+		gobject.timeout_add(int(round(1000./50.)), self.UpdatePipe)
+		self.p = multiprocessing.Process(target=self.PollCamera, args=(self.toWorker,self.fromWorker))
 		self.p.start()
 
 	def __del__(self):
@@ -33,7 +33,7 @@ class WebcamWidget(gtk.Invisible):
 		#self.Stop()
 
 	def Stop(self):
-		self.pipeParent.send(("STOP",))
+		self.toWorker.put(("STOP",))
 		self.p.terminate()
 
 	def GetCurrentImg(self):
@@ -46,20 +46,24 @@ class WebcamWidget(gtk.Invisible):
 
 	def UpdatePipe(self):
 
-		while self.pipeParent.poll():
-			pipeData = self.pipeParent.recv()
-			ty = pipeData[0]
-			if ty == "FRAME": 
-				img = pipeData[1]
-				self.buffer.append(img)
-				self.count += 1
-			while len(self.buffer) > self.maxBufferSize:
-				self.buffer.pop(0)
-			#print ty, len(self.buffer)
+		while not self.fromWorker.empty():
+			try:	
+				pipeData = self.fromWorker.get(0)
+				ty = pipeData[0]
+				if ty == "FRAME": 
+					img = pipeData[1]
+					self.buffer.append(img)
+					self.count += 1
+				while len(self.buffer) > self.maxBufferSize:
+					self.buffer.pop(0)
+				#print ty, len(self.buffer)
+			except Queue.Empty:
+				pass
+			
 
 		return True
 
-	def PollCamera(self, pipe):
+	def PollCamera(self, toWorker, fromWorker):
 		running = True
 		cap = cv.CaptureFromCAM(-1)
 		capture_size = (320,200)
@@ -69,23 +73,100 @@ class WebcamWidget(gtk.Invisible):
 		#fps = cv.GetCaptureProperty(cap, cv.CV_CAP_PROP_FPS)
 
 		while (running):
-			while pipe.poll():
-				pipeData = pipe.recv()
+			try:
+				pipeData = toWorker.get(0)
 				#print "Worker",pipeData[0]
 				if pipeData[0] == "STOP":
 					running = False
-					continue
+
+
+			except Queue.Empty:
+				pass
 
 			imIpl = cv.QueryFrame(cap)
 			if imIpl is not None:
 				pilImg = IplToPilImg(imIpl)
-				#print pilImg
-				pipe.send(("FRAME",np.array(pilImg)))
-			time.sleep(1./25.)
+			#	#print pilImg
+				fromWorker.put(("FRAME",np.array(pilImg)))
+			time.sleep(1./100.)
 
-		pipe.send(("STOPPED",))	
+		fromWorker.put(("STOPPED",))	
 		
 		return True
+
+class TrackingProcess:
+	def __init__(self):
+		self.currentTracking = []
+		self.toWorker, self.fromWorker = multiprocessing.Queue(), multiprocessing.Queue()
+		gobject.timeout_add(int(round(1000./50.)), self.UpdatePipe)
+		self.p = multiprocessing.Process(target=self.Process, args=(self.toWorker,self.fromWorker))
+		#self.p = multiprocessing.Process(target=Test, args=(pipeChile,))
+		self.p.start()
+
+	def __del__(self):
+		pass
+
+	def Stop(self):
+		self.toWorker.put(("STOP",))
+		self.p.terminate()
+
+	def TrackFrame(self, frameArr):
+		if self.toWorker.qsize() < 5:
+			self.toWorker.put(("FRAME", frameArr))
+
+	def GetCurrentTracking(self):
+		return self.currentTracking
+
+	def UpdatePipe(self):
+
+		try:	
+			pipeData = self.fromWorker.get(0)
+			ty = pipeData[0]
+			if ty == "TRACKING": 
+				tr = pipeData[1]
+				self.currentTracking = tr
+
+		except Queue.Empty:
+			pass
+
+		return True
+
+	def Process(self, toWorker,fromWorker):
+		running = True
+		currentFrame = None
+		tc = klt.KLT_TrackingContext()
+		fl = []
+		prevImg = None
+
+		while running:
+
+			while not toWorker.empty():
+				print toWorker.empty(), toWorker.qsize()
+				try:
+					pipeData = toWorker.get()
+					if pipeData[0] == "STOP":
+						running = False
+					if pipeData[0] == "FRAME":					
+						currentFrame = Image.fromarray(pipeData[1])
+				except Queue.Empty:
+					pass
+				time.sleep(0.01)
+
+			if currentFrame is not None and running:
+				
+				nFeatures = 50
+				countActive = klt.KLTCountRemainingFeatures(fl)
+				if countActive == 0 or prevImg is None:
+					fl = selectGoodFeatures.KLTSelectGoodFeatures(tc, currentFrame, nFeatures)
+				else:
+					trackFeatures.KLTTrackFeatures(tc, prevImg, currentFrame, fl)
+				#print fl
+				fromWorker.put(("TRACKING",fl))
+				prevImg = currentFrame
+				currentFrame = None
+
+			time.sleep(0.01)
+	
 
 class VisualiseWidget(gtk.DrawingArea):
 	def __init__(self):
@@ -154,6 +235,7 @@ class Base:
 		self.fl = []
 		self.webcam = WebcamWidget()
 		self.showingFrame = None
+		self.trackingProcess = TrackingProcess()
 
 		#Create main window
 		self.window = gtk.Window(gtk.WINDOW_TOPLEVEL)
@@ -172,6 +254,7 @@ class Base:
 
 	def delete_event(self, widget, event, data=None):
 		self.webcam.Stop()
+		self.trackingProcess.Stop()
 		print "delete event occurred"
 		return False
 
@@ -190,32 +273,18 @@ class Base:
 			img = self.webcam.GetCurrentImg()
 			if img is not None:		
 				self.visArea.SetImageByPil(Image.fromarray(img))
+
+				currentTracking = self.trackingProcess.GetCurrentTracking()
+				#print currentTracking
+				self.visArea.trackerPos = []
+				for pt in currentTracking:
+					if pt.val < 0: continue
+					self.visArea.trackerPos.append((pt.x,pt.y))
+
 				self.visArea.RedrawCanvas()
+				self.trackingProcess.TrackFrame(img)
 			self.showingFrame = self.webcam.GetFrameNum()
 
-		return True
-
-		imIpl = cv.QueryFrame(self.cap)
-		
-		pilImg = IplToPilImg(imIpl)
-		if 0:
-			nFeatures = 50
-			countActive = klt.KLTCountRemainingFeatures(self.fl)
-			if countActive == 0:
-				self.fl = selectGoodFeatures.KLTSelectGoodFeatures(self.tc, pilImg, nFeatures)
-			else:
-				trackFeatures.KLTTrackFeatures(self.tc, self.prevImg, pilImg, self.fl)
-
-			self.visArea.trackerPos = []
-			for pt in self.fl:
-				#print pt.x,pt.y,pt.val
-				if pt.val < 0: continue
-				self.visArea.trackerPos.append((pt.x,pt.y))
-
-		self.visArea.SetImageByPil(pilImg)
-		self.visArea.RedrawCanvas()
-
-		self.prevImg = pilImg
 		return True
 
 
