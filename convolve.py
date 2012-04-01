@@ -2,10 +2,11 @@
 import math, numpy as np
 from PIL import Image
 
+#Attempt to use scipy to speed up convolution
 useScipyConvolution = False
 try:
 	import scipy.ndimage
-	useScipyConvolution = False
+	useScipyConvolution = True
 except:
 	print "Warning: Failed to import scipy"
 
@@ -78,6 +79,10 @@ def _computeKernels(sigma):
 		den -= i*gaussderiv.data[i+hw]
 	for i in range(-hw,hw+1): 
 		gaussderiv.data[i+hw] /= den
+
+	#Extract the valid portion of the kernel
+	gauss.data = gauss.data[:gauss.width]
+	gaussderiv.data = gaussderiv.data[:gaussderiv.width]
 
 	global cachegauss, cachegaussderiv, cached_sigma_last
 	cachegauss = gauss
@@ -203,8 +208,8 @@ def _convolveSeparate(imgin,horiz_kernel,vert_kernel):
 		#Do convolution using scipy (faster)
 
 		imginArr = np.array(imgin)
-		tmpimg = scipy.ndimage.filters.convolve1d(imginArr, horiz_kernel.data, axis = 0)
-		imgout = scipy.ndimage.filters.convolve1d(tmpimg, vert_kernel.data, axis = 1)
+		tmpimg = scipy.ndimage.filters.convolve1d(imginArr, horiz_kernel.data, axis = 1)
+		imgout = scipy.ndimage.filters.convolve1d(tmpimg, vert_kernel.data, axis = 0)
 		#print imgout
 		return Image.fromarray(imgout)
 
@@ -235,6 +240,10 @@ def KLTComputeGradients(img, sigma):
 	else:
 		gauss_kernel, gaussderiv_kernel = cachegauss, cachegaussderiv
 	
+	#print gauss_kernel.data, gauss_kernel.width
+	#plt.plot(gauss_kernel.data)
+	#plt.show()
+
 	gradx = _convolveSeparate(img, gaussderiv_kernel, gauss_kernel)
 	grady = _convolveSeparate(img, gauss_kernel, gaussderiv_kernel)
 
