@@ -85,11 +85,11 @@ def _computeKernels(sigma):
 	gaussderiv.data = gaussderiv.data[:gaussderiv.width]
 
 	global cachegauss, cachegaussderiv, cached_sigma_last
-	cachegauss = gauss
-	cachegaussderiv = gaussderiv
+	cachegauss = gauss.data
+	cachegaussderiv = gaussderiv.data
 	cached_sigma_last = sigma
 
-	return gauss, gaussderiv
+	return gauss.data, gaussderiv.data
 
 #*********************************************************************
 #* KLTGetKernelWidths
@@ -98,8 +98,7 @@ def _computeKernels(sigma):
 
 def KLTGetKernelWidths(sigma):
 	gauss_kernel, gaussderiv_kernel = _computeKernels(sigma)
-	return gauss_kernel.width, gaussderiv_kernel.width
-
+	return len(gauss_kernel), len(gaussderiv_kernel)
 
 #*********************************************************************
 #* _convolveImageHoriz
@@ -107,14 +106,14 @@ def KLTGetKernelWidths(sigma):
 
 def _convolveImageHoriz(imgin,kernel):
 
-	radius = kernel.width / 2
+	radius = len(kernel) / 2
 	imgout = Image.new("F", imgin.size)
 	imgoutl = imgout.load()
 	imginl = imgin.load()
 	ncols, nrows = imgin.size
 
 	# Kernel width must be odd 
-	assert kernel.width % 2 == 1
+	assert len(kernel) % 2 == 1
 
 	# Must read from and write to different images 
 	#assert(imgin != imgout);
@@ -134,8 +133,8 @@ def _convolveImageHoriz(imgin,kernel):
 		for i in range(radius,ncols - radius):
 			sumv = 0.0
 			ind = 0
-			for k in range(kernel.width-1,-1,-1):
-				sumv += imginl[i+ind-radius,j] * kernel.data[k]
+			for k in range(len(kernel)-1,-1,-1):
+				sumv += imginl[i+ind-radius,j] * kernel[k]
 				ind += 1
 			imgoutl[i,j] = sumv
 		
@@ -154,14 +153,14 @@ def _convolveImageHoriz(imgin,kernel):
 
 def _convolveImageVert(imgin, kernel):
 
-	radius = kernel.width / 2;
+	radius = len(kernel) / 2;
 	imgout = Image.new("F", imgin.size)
 	imgoutl = imgout.load()
 	imginl = imgin.load()
 	ncols, nrows = imgin.size
 
 	# Kernel width must be odd
-	assert kernel.width % 2 == 1
+	assert len(kernel) % 2 == 1
 
 	# Must read from and write to different images
 	#assert(imgin != imgout);
@@ -182,8 +181,8 @@ def _convolveImageVert(imgin, kernel):
 
 			sumv = 0.
 			ind = 0
-			for k in range(kernel.width-1,-1,-1):
-				sumv += imginl[i,j+ind-radius] * kernel.data[k]
+			for k in range(len(kernel)-1,-1,-1):
+				sumv += imginl[i,j+ind-radius] * kernel[k]
 				ind += 1
 			imgoutl[i,j] = sumv
 
@@ -208,8 +207,8 @@ def _convolveSeparate(imgin,horiz_kernel,vert_kernel):
 		#Do convolution using scipy (faster)
 
 		imginArr = np.array(imgin)
-		tmpimg = scipy.ndimage.filters.convolve1d(imginArr, horiz_kernel.data, axis = 1)
-		imgout = scipy.ndimage.filters.convolve1d(tmpimg, vert_kernel.data, axis = 0)
+		tmpimg = scipy.ndimage.filters.convolve1d(imginArr, horiz_kernel, axis = 1)
+		imgout = scipy.ndimage.filters.convolve1d(tmpimg, vert_kernel, axis = 0)
 		#print imgout
 		return Image.fromarray(imgout)
 
@@ -240,8 +239,8 @@ def KLTComputeGradients(img, sigma):
 	else:
 		gauss_kernel, gaussderiv_kernel = cachegauss, cachegaussderiv
 	
-	#print gauss_kernel.data, gauss_kernel.width
-	#plt.plot(gauss_kernel.data)
+	#print gauss_kernel
+	#plt.plot(gauss_kernel)
 	#plt.show()
 
 	gradx = _convolveSeparate(img, gaussderiv_kernel, gauss_kernel)
