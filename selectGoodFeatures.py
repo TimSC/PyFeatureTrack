@@ -5,6 +5,7 @@ from klt import *
 from error import *
 from convolve import *
 from klt_util import *
+import goodFeaturesUtils
 
 class selectionMode:
 	SELECTING_ALL = 1
@@ -132,29 +133,7 @@ def _enforceMinimumDistance(pointlist, featurelist, ncols, nrows, mindist, min_e
 
 	return featurelist
 
-#*********************************************************************
-#* _minEigenvalue
-#*
-#* Given the three distinct elements of the symmetric 2x2 matrix
-#*                     [gxx gxy]
-#*                     [gxy gyy],
-#* Returns the minimum eigenvalue of the matrix.  
-#*
 
-def _minEigenvalue(gxx, gxy, gyy):
-	return float((gxx + gyy - math.sqrt((gxx - gyy)*(gxx - gyy) + 4.*gxy*gxy))/2.)
-
-
-#*********************************************************************
-
-def SumGradientInWindow(x,y,window_hh,window_hw,gradxl,gradyl):
-	# Sum the gradients in the surrounding window with numpy
-	windowx = gradxl[y-window_hh: y+window_hh+1, x-window_hw: x+window_hw+1]
-	windowy = gradyl[y-window_hh: y+window_hh+1, x-window_hw: x+window_hw+1]
-	gxx = np.power(windowx,2.).sum()
-	gxy = (windowx * windowy).sum()
-	gyy = np.power(windowy,2.).sum()
-	return gxx, gxy, gyy
 
 #*********************************************************************
 
@@ -247,30 +226,8 @@ def _KLTSelectGoodFeatures(tc,img,nFeatures,mode):
 	gradxArr = np.array(gradx)
 	gradyArr = np.array(grady)
 
-	# For most of the pixels in the image, do ... 
-	pointlistx,pointlisty,pointlistval = [], [], []
-	npoints = 0
-	for y in range(bordery, nrows - bordery):
-		for x in range(borderx, ncols - borderx):
-
-			gxx, gxy, gyy = SumGradientInWindow(x,y,window_hh,window_hw,gradxArr,gradyArr)
-
-			# Store the trackability of the pixel as the minimum
-			# of the two eigenvalues 
-			pointlistx.append(x)
-			pointlisty.append(y)
-			val = _minEigenvalue(gxx, gxy, gyy);
-			#if val > limit:
-				#TWarning("(_KLTSelectGoodFeatures) minimum eigenvalue %f is "
-				#           "greater than the capacity of an int; setting "
-				#           "to maximum value", val);
-				#val = (float) limit;
-			
-			pointlistval.append(int(val))
-			npoints = npoints + 1
-			x += tc.nSkippedPixels + 1
-
-		y += tc.nSkippedPixels + 1
+	pointlistx,pointlisty,pointlistval=goodFeaturesUtils.ScanImageForGoodFeatures(gradxArr,\
+		gradyArr, borderx, bordery, window_hw, window_hh, tc.nSkippedPixels)
 			
 	# Sort the features 
 	pointlist = zip(pointlistval, pointlistx, pointlisty)
