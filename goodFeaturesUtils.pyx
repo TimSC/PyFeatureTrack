@@ -37,31 +37,32 @@ def ScanImageForGoodFeatures(gradxArr, gradyArr, int borderx, int bordery, int w
 	cdef int npoints = 0
 
 	# For most of the pixels in the image, do ... 
-	pointlistx,pointlisty,pointlistval = [], [], []
-	
+	pointlistval = []
+	pointlistx, pointlisty = [], []
 
 	cdef np.ndarray[np.float32_t,ndim=2] gradxxCumSum2 = np.power(gradxArr,2.).cumsum(axis=1).cumsum(axis=0)
 	cdef np.ndarray[np.float32_t,ndim=2] gradyxCumSum2 = (gradxArr * gradyArr).cumsum(axis=1).cumsum(axis=0)
 	cdef np.ndarray[np.float32_t,ndim=2] gradyyCumSum2 = np.power(gradyArr,2.).cumsum(axis=1).cumsum(axis=0)
 
-	for y in range(bordery, nrows - bordery):
-		for x in range(borderx, ncols - borderx):
+	for y in range(bordery, nrows - bordery, nSkippedPixels + 1):
+		for x in range(borderx, ncols - borderx, nSkippedPixels + 1):
 
 			gxx = SumGradientInWindow(x,y,window_hh,window_hw,gradxxCumSum2)
 			gxy = SumGradientInWindow(x,y,window_hh,window_hw,gradyxCumSum2)
 			gyy = SumGradientInWindow(x,y,window_hh,window_hw,gradyyCumSum2)
 
 			# Store the trackability of the pixel as the minimum
-			# of the two eigenvalues 
-			pointlistx.append(x)
-			pointlisty.append(y)
+			# of the two eigenvalues
 			val = _minEigenvalue(gxx, gxy, gyy);
 			
-			pointlistval.append(int(val))
+			pointlistval.append(val)
 			npoints += 1
-			x += nSkippedPixels + 1
 
-		y += nSkippedPixels + 1
+		xRow = np.arange(borderx, ncols - borderx, nSkippedPixels + 1, np.int32)
+		yRow = np.ones((len(xRow),), np.int32) * y
+		#print len(xRow), len(yRow)
+		pointlistx.extend(xRow)
+		pointlisty.extend(yRow)
 
 	return pointlistx,pointlisty,pointlistval
 

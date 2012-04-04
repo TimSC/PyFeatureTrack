@@ -16,6 +16,7 @@ import pickle
 def main():
 	tc = KLT_TrackingContext()
 	nFeatures = 50
+	tc.nSkippedPixels = 0
 	
 	KLTPrintTrackingContext(tc)
 
