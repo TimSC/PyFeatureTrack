@@ -17,7 +17,7 @@ cdef float _minEigenvalue(float gxx, float gxy, float gyy):
 
 #*********************************************************************
 
-cdef float SumGradientInWindow(int x,int y,int window_hh,int window_hw, cumSum):
+cdef float SumGradientInWindow(int x,int y,int window_hh,int window_hw, np.ndarray[np.float32_t,ndim=2] cumSum):
 
 	#Sum the gradients in the surrounding window with numpy
 	cdef float a = cumSum[y-window_hh-1, x-window_hw-1]
@@ -29,18 +29,20 @@ cdef float SumGradientInWindow(int x,int y,int window_hh,int window_hw, cumSum):
 
 #**********************************************************************
 
-def ScanImageForGoodFeatures(gradxArr, gradyArr, borderx, bordery, window_hw, window_hh, nSkippedPixels):
+def ScanImageForGoodFeatures(gradxArr, gradyArr, int borderx, int bordery, int window_hw, int window_hh, int nSkippedPixels):
 	cdef float val, gxx, gxy, gyy
 	cdef int x, y
+	cdef int nrows = gradxArr.shape[0]
+	cdef int ncols = gradxArr.shape[1]
+	cdef int npoints = 0
 
 	# For most of the pixels in the image, do ... 
 	pointlistx,pointlisty,pointlistval = [], [], []
-	npoints = 0
-	nrows, ncols = gradxArr.shape
+	
 
-	gradxxCumSum2 = np.power(gradxArr,2.).cumsum(axis=1).cumsum(axis=0)
-	gradyxCumSum2 = (gradxArr * gradyArr).cumsum(axis=1).cumsum(axis=0)
-	gradyyCumSum2 = np.power(gradyArr,2.).cumsum(axis=1).cumsum(axis=0)
+	cdef np.ndarray[np.float32_t,ndim=2] gradxxCumSum2 = np.power(gradxArr,2.).cumsum(axis=1).cumsum(axis=0)
+	cdef np.ndarray[np.float32_t,ndim=2] gradyxCumSum2 = (gradxArr * gradyArr).cumsum(axis=1).cumsum(axis=0)
+	cdef np.ndarray[np.float32_t,ndim=2] gradyyCumSum2 = np.power(gradyArr,2.).cumsum(axis=1).cumsum(axis=0)
 
 	for y in range(bordery, nrows - bordery):
 		for x in range(borderx, ncols - borderx):
@@ -56,7 +58,7 @@ def ScanImageForGoodFeatures(gradxArr, gradyArr, borderx, bordery, window_hw, wi
 			val = _minEigenvalue(gxx, gxy, gyy);
 			
 			pointlistval.append(int(val))
-			npoints = npoints + 1
+			npoints += 1
 			x += nSkippedPixels + 1
 
 		y += nSkippedPixels + 1
