@@ -10,20 +10,29 @@ import math, numpy as np
 #* Returns the minimum eigenvalue of the matrix.  
 #*
 
-def _minEigenvalue(gxx, gxy, gyy):
-	return float((gxx + gyy - math.sqrt((gxx - gyy)*(gxx - gyy) + 4.*gxy*gxy))/2.)
+cdef float _minEigenvalue(float gxx, float gxy, float gyy):
+	cdef float sqrtTerm = ((gxx - gyy)*(gxx - gyy) + 4.*gxy*gxy) ** 0.5
+	return (gxx + gyy - sqrtTerm)/2.
 
 #*********************************************************************
 
-def SumGradientInWindow(x,y,window_hh,window_hw,gradxxCumSum):
+cdef float SumGradientInWindow(int x,int y,int window_hh,int window_hw,gradxxCumSum):
+
+	cdef float total
 
 	#Sum the gradients in the surrounding window with numpy
-	gxx = (gradxxCumSum[y-window_hh: y+window_hh+1,x+window_hw] - gradxxCumSum[y-window_hh: y+window_hh+1, x-window_hw-1]).sum()
-	return gxx
+	higher = gradxxCumSum[y-window_hh: y+window_hh+1,x+window_hw] 
+	lower = gradxxCumSum[y-window_hh: y+window_hh+1, x-window_hw-1]
+
+	total = (higher - lower).sum()
+	return total
 
 #**********************************************************************
 
 def ScanImageForGoodFeatures(gradxArr, gradyArr, borderx, bordery, window_hw, window_hh, nSkippedPixels):
+	cdef float val, gxx, gxy, gyy
+	cdef int x, y
+
 	# For most of the pixels in the image, do ... 
 	pointlistx,pointlisty,pointlistval = [], [], []
 	npoints = 0
