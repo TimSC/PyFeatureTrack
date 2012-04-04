@@ -1,4 +1,4 @@
-
+# cython: profile=True
 import math, numpy as np
 
 #*********************************************************************
@@ -15,14 +15,11 @@ def _minEigenvalue(gxx, gxy, gyy):
 
 #*********************************************************************
 
-def SumGradientInWindow(x,y,window_hh,window_hw,gradxl,gradyl):
-	# Sum the gradients in the surrounding window with numpy
-	windowx = gradxl[y-window_hh: y+window_hh+1, x-window_hw: x+window_hw+1]
-	windowy = gradyl[y-window_hh: y+window_hh+1, x-window_hw: x+window_hw+1]
-	gxx = np.power(windowx,2.).sum()
-	gxy = (windowx * windowy).sum()
-	gyy = np.power(windowy,2.).sum()
-	return gxx, gxy, gyy
+def SumGradientInWindow(x,y,window_hh,window_hw,gradxxCumSum):
+
+	#Sum the gradients in the surrounding window with numpy
+	gxx = (gradxxCumSum[y-window_hh: y+window_hh+1,x+window_hw] - gradxxCumSum[y-window_hh: y+window_hh+1, x-window_hw-1]).sum()
+	return gxx
 
 #**********************************************************************
 
@@ -32,10 +29,16 @@ def ScanImageForGoodFeatures(gradxArr, gradyArr, borderx, bordery, window_hw, wi
 	npoints = 0
 	nrows, ncols = gradxArr.shape
 	
+	gradxxCumSum = np.power(gradxArr,2.).cumsum(axis=1)
+	gradyxCumSum = (gradxArr * gradyArr).cumsum(axis=1)
+	gradyyCumSum = np.power(gradyArr,2.).cumsum(axis=1)
+
 	for y in range(bordery, nrows - bordery):
 		for x in range(borderx, ncols - borderx):
 
-			gxx, gxy, gyy = SumGradientInWindow(x,y,window_hh,window_hw,gradxArr,gradyArr)
+			gxx = SumGradientInWindow(x,y,window_hh,window_hw,gradxxCumSum)
+			gxy = SumGradientInWindow(x,y,window_hh,window_hw,gradyxCumSum)
+			gyy = SumGradientInWindow(x,y,window_hh,window_hw,gradyyCumSum)
 
 			# Store the trackability of the pixel as the minimum
 			# of the two eigenvalues 
