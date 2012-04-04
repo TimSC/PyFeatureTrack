@@ -31,3 +31,9 @@ or if you have write privileges::
 
     git clone git@github.com:TimSC/PyFeatureTrack.git
 
+Usage
+-----
+
+    python setup.py build_ext --inplace
+
+    python example1.py
