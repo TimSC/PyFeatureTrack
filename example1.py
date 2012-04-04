@@ -40,7 +40,7 @@ def main():
 	#img2 = Image.open("img1.pgm")
 
 	#tc = pickle.load(open("context.dat"))
-	tc.writeInternalImages = True
+	#tc.writeInternalImages = True
 	#KLTPrintTrackingContext(tc)
 
 	#fl = pickle.load(open("featurelist.dat"))

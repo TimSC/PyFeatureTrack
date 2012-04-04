@@ -13,7 +13,7 @@ cimport numpy as np
 #* gray-level value of the point in the image.  
 #*
 
-def interpolate(float x, float y, np.ndarray[np.float32_t,ndim=2] img):
+cdef float interpolate(float x, float y, np.ndarray[np.float32_t,ndim=2] img):
 
 	cdef int xt = int(x)  # coordinates of top-left corner 
 	cdef int yt = int(y)
@@ -45,19 +45,19 @@ def interpolate(float x, float y, np.ndarray[np.float32_t,ndim=2] img):
 #* between the two overlaid images.
 #*
 
-def _computeIntensityDifference(img1,   # images 
-	img2,
-	x1, 
-	y1,     # center of window in 1st img
-	x2, 
-	y2,     # center of window in 2nd img
-	width, 
-	height):  # size of window
+def _computeIntensityDifference(np.ndarray[np.float32_t,ndim=2] img1,   # images 
+	np.ndarray[np.float32_t,ndim=2] img2,
+	float x1, 
+	float y1,     # center of window in 1st img
+	float x2, 
+	float y2,     # center of window in 2nd img
+	int width, 
+	int height):  # size of window
 
-	hw = width/2
-	hh = height/2
-	#float g1, g2;
-	#register int i, j;
+	cdef int hw = width/2
+	cdef int hh = height/2
+	cdef float g1, g2
+	cdef int i, j
 
 	imgdiff = []
 	#imgl1 = img1.load()
@@ -82,24 +82,19 @@ def _computeIntensityDifference(img1,   # images
 #* overlaid gradients.
 #*
 
-def _computeGradientSum(gradx1,  # gradient images
-	grady1,
-	gradx2,
-	grady2,
-	x1, y1,      # center of window in 1st img
-	x2,  y2,      # center of window in 2nd img
-	width, height):   # size of window
+def _computeGradientSum(np.ndarray[np.float32_t,ndim=2] gradx1,  # gradient images
+	np.ndarray[np.float32_t,ndim=2] grady1,
+	np.ndarray[np.float32_t,ndim=2] gradx2,
+	np.ndarray[np.float32_t,ndim=2] grady2,
+	float x1, float y1,      # center of window in 1st img
+	float x2, float y2,      # center of window in 2nd img
+	int width, int height):   # size of window
 
-	hw = width/2
-	hh = height/2
-	#float g1, g2;
-	#register int i, j;
+	cdef int hw = width/2
+	cdef int hh = height/2
+	cdef float g1, g2
+	cdef int i, j
 	gradx, grady = [], []
-
-	#gradx1l = gradx1.load()
-	#grady1l = grady1.load()
-	#gradx2l = gradx2.load()
-	#grady2l = grady2.load()
 
 	# Compute values
 	for j in range(-hh, hh + 1):
