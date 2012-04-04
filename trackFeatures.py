@@ -103,49 +103,23 @@ def _sumAbsFloatWindow(fw, width, height):
 	return sum
 
 #*********************************************************************
-#* _trackFeature
-#*
-#* Tracks a feature point from one image to the next.
-#*
-#* RETURNS
-#* KLT_SMALL_DET if feature is lost,
-#* KLT_MAX_ITERATIONS if tracking stopped because iterations timed out,
-#* KLT_TRACKED otherwise.
-#*
 
-def _trackFeature(
-	x1,  # location of window in first image 
-	y1,
-	x2, # starting location of search in second image
-	y2,
-	img1, 
-	gradx1,
-	grady1,
-	img2, 
-	gradx2,
-	grady2,
-	width,           # size of window
-	height,
-	step_factor, # 2.0 comes from equations, 1.0 seems to avoid overshooting
-	max_iterations,
-	small,         # determinant threshold for declaring KLT_SMALL_DET 
-	th,            # displacement threshold for stopping               
-	max_residue,   # residue threshold for declaring KLT_LARGE_RESIDUE 
-	lighting_insensitive): # whether to normalize for gain and bias 
+def _trackFeatureIterate(x1, y1, x2, y2, img1, gradx1, grady1, img2, gradx2, grady2, tc):
 
-	#_FloatWindow imgdiff, gradx, grady;
-	#float gxx, gxy, gyy, ex, ey, dx, dy;
+	width = tc.window_width # size of window
+	height = tc.window_height 
+	lighting_insensitive = tc.lighting_insensitive # whether to normalize for gain and bias 
+	step_factor = tc.step_factor # 2.0 comes from equations, 1.0 seems to avoid overshooting
+	small = tc.min_determinant # determinant threshold for declaring KLT_SMALL_DET 
+	th = tc.min_displacement # displacement threshold for stopping             
+	max_iterations = tc.max_iterations 
+
 	iteration = 0
+	one_plus_eps = 1.001   # To prevent rounding errors 
 	hw = width/2
 	hh = height/2
 	nc = img1.shape[1]
 	nr = img1.shape[0]
-	one_plus_eps = 1.001   # To prevent rounding errors 
-
-	# Allocate memory for windows
-	#imgdiff = [0. for i in range(width, height)]
-	#gradx   = [0. for i in range(width, height)]
-	#grady   = [0. for i in range(width, height)]
 
 	# Iteratively update the window position 
 	while True:
@@ -170,6 +144,7 @@ def _trackFeature(
 		gxx, gxy, gyy = _compute2by2GradientMatrix(gradx, grady, width, height)
 		ex, ey = _compute2by1ErrorVector(imgdiff, gradx, grady, width, height, step_factor)
 
+
 		# Using matrices, solve equation for new displacement */
 		status, dx, dy = _solveEquation(gxx, gxy, gyy, ex, ey, small)
 		if status == kltState.KLT_SMALL_DET: break
@@ -179,6 +154,48 @@ def _trackFeature(
 		iteration += 1
 
 		if not ((abs(dx)>=th or abs(dy)>=th) and iteration < max_iterations): break
+
+	return x2, y2, status, iteration
+
+#*********************************************************************
+#* _trackFeature
+#*
+#* Tracks a feature point from one image to the next.
+#*
+#* RETURNS
+#* KLT_SMALL_DET if feature is lost,
+#* KLT_MAX_ITERATIONS if tracking stopped because iterations timed out,
+#* KLT_TRACKED otherwise.
+#*
+
+def _trackFeature(
+	x1,  # location of window in first image 
+	y1,
+	x2, # starting location of search in second image
+	y2,
+	img1, 
+	gradx1,
+	grady1,
+	img2, 
+	gradx2,
+	grady2,
+	tc): 
+
+	width = tc.window_width # size of window
+	height = tc.window_height 
+	max_iterations = tc.max_iterations       
+	max_residue = tc.max_residue # displacement threshold for stopping    
+	lighting_insensitive = tc.lighting_insensitive # whether to normalize for gain and bias 
+
+	#_FloatWindow imgdiff, gradx, grady;
+	#float gxx, gxy, gyy, ex, ey, dx, dy;
+	hw = width/2
+	hh = height/2
+	nc = img1.shape[1]
+	nr = img1.shape[0]
+	one_plus_eps = 1.001   # To prevent rounding errors 
+
+	x2, y2, status, iteration = _trackFeatureIterate(x1, y1, x2, y2, img1, gradx1, grady1, img2, gradx2, grady2, tc)
 
 	# Check whether window is out of bounds 
 	if x2-hw < 0.0 or nc-(x2+hw) < one_plus_eps or y2-hh < 0.0 or nr-(y2+hh) < one_plus_eps:
@@ -200,9 +217,6 @@ def _trackFeature(
 	elif status == kltState.KLT_LARGE_RESIDUE: return kltState.KLT_LARGE_RESIDUE, x2, y2
 	elif iteration >= max_iterations: return kltState.KLT_MAX_ITERATIONS, x2, y2
 	else: return kltState.KLT_TRACKED, x2, y2
-
-
-
 
 #*********************************************************************
 
@@ -339,13 +353,7 @@ def KLTTrackFeatures(tc, img1, img2, featurelist):
 				pyramid1_gradx.img[r], pyramid1_grady.img[r], 
 				pyramid2.img[r], 
 				pyramid2_gradx.img[r], pyramid2_grady.img[r],
-				tc.window_width, tc.window_height,
-				tc.step_factor,
-				tc.max_iterations,
-				tc.min_determinant,
-				tc.min_displacement,
-				tc.max_residue,
-				tc.lighting_insensitive)
+				tc)
 
 			if val==kltState.KLT_SMALL_DET or val==kltState.KLT_OOB:
 				break
