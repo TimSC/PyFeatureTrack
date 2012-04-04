@@ -138,21 +138,14 @@ def _trackFeature(
 	iteration = 0
 	hw = width/2
 	hh = height/2
-	nc = img1.size[0]
-	nr = img1.size[1]
+	nc = img1.shape[1]
+	nr = img1.shape[0]
 	one_plus_eps = 1.001   # To prevent rounding errors 
 
 	# Allocate memory for windows
 	#imgdiff = [0. for i in range(width, height)]
 	#gradx   = [0. for i in range(width, height)]
 	#grady   = [0. for i in range(width, height)]
-
-	img1Arr = np.array(img1)
-	img2Arr = np.array(img2)
-	gradx1Arr = np.array(gradx1)
-	grady1Arr = np.array(grady1)
-	gradx2Arr = np.array(gradx2)
-	grady2Arr = np.array(grady2)
 
 	# Iteratively update the window position 
 	while True:
@@ -167,11 +160,11 @@ def _trackFeature(
 
 		# Compute gradient and difference windows 
 		if lighting_insensitive:
-			imgdiff = trackFeaturesUtils._computeIntensityDifferenceLightingInsensitive(img1Arr, img2Arr, x1, y1, x2, y2, width, height)
-			gradx, grady = trackFeaturesUtils._computeGradientSumLightingInsensitive(gradx1Arr, grady1Arr, gradx2Arr, grady2Arr, img1, img2, x1, y1, x2, y2, width, height)
+			imgdiff = trackFeaturesUtils._computeIntensityDifferenceLightingInsensitive(img1, img2, x1, y1, x2, y2, width, height)
+			gradx, grady = trackFeaturesUtils._computeGradientSumLightingInsensitive(gradx1, grady1, gradx, grady2, img1, img2, x1, y1, x2, y2, width, height)
 		else:
-			imgdiff = trackFeaturesUtils._computeIntensityDifference(img1Arr, img2Arr, x1, y1, x2, y2, width, height)
-			gradx, grady = trackFeaturesUtils._computeGradientSum(gradx1Arr, grady1Arr, gradx2Arr, grady2Arr, x1, y1, x2, y2, width, height)
+			imgdiff = trackFeaturesUtils._computeIntensityDifference(img1, img2, x1, y1, x2, y2, width, height)
+			gradx, grady = trackFeaturesUtils._computeGradientSum(gradx1, grady1, gradx2, grady2, x1, y1, x2, y2, width, height)
 
 		# Use these windows to construct matrices 
 		gxx, gxy, gyy = _compute2by2GradientMatrix(gradx, grady, width, height)
@@ -194,9 +187,9 @@ def _trackFeature(
 	# Check whether residue is too large 
 	if status == kltState.KLT_TRACKED:
 		if lighting_insensitive:
-			imgdiff = trackFeaturesUtils._computeIntensityDifferenceLightingInsensitive(img1Arr, img2Arr, x1, y1, x2, y2, width, height)
+			imgdiff = trackFeaturesUtils._computeIntensityDifferenceLightingInsensitive(img1, img2, x1, y1, x2, y2, width, height)
 	  	else:
-			imgdiff = trackFeaturesUtils._computeIntensityDifference(img1Arr, img2Arr, x1, y1, x2, y2, width, height)
+			imgdiff = trackFeaturesUtils._computeIntensityDifference(img1, img2, x1, y1, x2, y2, width, height)
 
 		if _sumAbsFloatWindow(imgdiff, width, height)/(width*height) > max_residue:
 			status = kltState.KLT_LARGE_RESIDUE
@@ -282,7 +275,7 @@ def KLTTrackFeatures(tc, img1, img2, featurelist):
 	else:
 		floatimg1_created = True
 		#floatimg1 = Image.new("F", img1.size)
-		tmpimg = img1.convert("F")
+		tmpimg = np.array(img1.convert("F"))
 		floatimg1 = KLTComputeSmoothedImage(tmpimg, KLTComputeSmoothSigma(tc))
 		pyramid1 = KLTPyramid(ncols, nrows, int(subsampling), tc.nPyramidLevels)
 		pyramid1.Compute(floatimg1, tc.pyramid_sigma_fact)
@@ -293,7 +286,7 @@ def KLTTrackFeatures(tc, img1, img2, featurelist):
 
 	# Do the same thing with second image
 	#floatimg2 = _KLTCreateFloatImage(ncols, nrows)
-	tmpimg = img2.convert("F")
+	tmpimg = np.array(img2.convert("F"))
 	floatimg2 = KLTComputeSmoothedImage(tmpimg, KLTComputeSmoothSigma(tc))
 	pyramid2 = KLTPyramid(ncols, nrows, int(subsampling), tc.nPyramidLevels)
 	pyramid2.Compute(floatimg2, tc.pyramid_sigma_fact)

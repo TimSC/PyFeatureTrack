@@ -5,6 +5,7 @@
 
 from error import *
 from convolve import *
+import numpy as np
 
 #*********************************************************************
 #*
@@ -35,7 +36,8 @@ class KLTPyramid:
 
 	def Compute(self, img, sigma_fact):
 
-		ncols, nrows = img.size
+		nrows = img.shape[0]
+		ncols = img.shape[1]
 		subsampling = self.subsampling
 		subhalf = subsampling / 2
 		sigma = subsampling * sigma_fact;  # empirically determined
@@ -47,8 +49,8 @@ class KLTPyramid:
 			KLTError("(_KLTComputePyramid)  Pyramid's subsampling must " + \
 			   "be either 2, 4, 8, 16, or 32")
 
-		assert self.ncols[0] == img.size[0]
-		assert self.nrows[0] == img.size[1]
+		assert self.ncols[0] == ncols
+		assert self.nrows[0] == nrows
 
 		# Copy original image to level 0 of pyramid
 		self.img[0] = img
@@ -56,18 +58,19 @@ class KLTPyramid:
 		currimg = img
 		for i in range(1,self.nLevels):
 			tmpimg = KLTComputeSmoothedImage(currimg, sigma)
-			tmpimgL = tmpimg.load()
+			#tmpimgL = tmpimg.load()
 
 			# Subsample
 			oldncols = ncols
 			ncols /= subsampling
 			nrows /= subsampling
-			subsampImg = Image.new("F",(ncols,nrows))
-			subsampImgL = subsampImg.load()
+			#subsampImg = Image.new("F",(ncols,nrows))
+			subsampImg = np.empty((nrows,ncols), np.float32)
+			#subsampImgL = subsampImg.load()
 			for y in range(nrows):
 				for x in range(ncols):
-					subsampImgL[x,y] = tmpimgL[subsampling*x+subhalf, subsampling*y+subhalf]
-						#tmpimg->data[(subsampling*y+subhalf)*oldncols + (subsampling*x+subhalf)]
+					subsampImg[y,x] = tmpimg[subsampling*y+subhalf, subsampling*x+subhalf]
+
 			self.img[i] = subsampImg
 
 			# Reassign current image 

@@ -206,18 +206,17 @@ def _convolveSeparate(imgin,horiz_kernel,vert_kernel):
 	if useScipyConvolution:
 		#Do convolution using scipy (faster)
 
-		imginArr = np.array(imgin)
-		tmpimg = scipy.ndimage.filters.convolve1d(imginArr, horiz_kernel, axis = 1)
+		#imginArr = np.array(imgin)
+		tmpimg = scipy.ndimage.filters.convolve1d(imgin, horiz_kernel, axis = 1)
 		imgout = scipy.ndimage.filters.convolve1d(tmpimg, vert_kernel, axis = 0)
 		#print imgout
-		return Image.fromarray(imgout)
+		return imgout
 
+	raise Exception("Need to convert convolution to numpy...")
 	# Do convolution in native code (slower)
-	tmpimg = _convolveImageHoriz(imgin, horiz_kernel)
-
-	imgout = _convolveImageVert(tmpimg, vert_kernel)
-
-	return imgout
+	#tmpimg = _convolveImageHoriz(imgin, horiz_kernel)
+	#imgout = _convolveImageVert(tmpimg, vert_kernel)
+	#return imgout
 
 
 #*********************************************************************
