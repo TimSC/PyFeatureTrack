@@ -106,6 +106,7 @@ def KLTGetKernelWidths(sigma):
 
 def _convolveImageHoriz(imgin,kernel):
 
+	imgin = Image.fromarray(imgin)
 	radius = len(kernel) / 2
 	imgout = Image.new("F", imgin.size)
 	imgoutl = imgout.load()
@@ -143,7 +144,7 @@ def _convolveImageHoriz(imgin,kernel):
 		for i in range(ncols - radius, ncols):
 			imgoutl[i,j] = 0.
 
-	return imgout
+	return np.array(imgout)
 
 
 
@@ -153,6 +154,7 @@ def _convolveImageHoriz(imgin,kernel):
 
 def _convolveImageVert(imgin, kernel):
 
+	imgin = Image.fromarray(imgin)
 	radius = len(kernel) / 2;
 	imgout = Image.new("F", imgin.size)
 	imgoutl = imgout.load()
@@ -195,7 +197,8 @@ def _convolveImageVert(imgin, kernel):
 		#ptrout -= nrows * ncols - 1;
 
 
-	return imgout
+	return np.array(imgout)
+
 
 #*********************************************************************
 #* _convolveSeparate
@@ -205,18 +208,14 @@ def _convolveSeparate(imgin,horiz_kernel,vert_kernel):
 
 	if useScipyConvolution:
 		#Do convolution using scipy (faster)
-
-		#imginArr = np.array(imgin)
 		tmpimg = scipy.ndimage.filters.convolve1d(imgin, horiz_kernel, axis = 1)
 		imgout = scipy.ndimage.filters.convolve1d(tmpimg, vert_kernel, axis = 0)
-		#print imgout
 		return imgout
 
-	raise Exception("Need to convert convolution to numpy...")
 	# Do convolution in native code (slower)
-	#tmpimg = _convolveImageHoriz(imgin, horiz_kernel)
-	#imgout = _convolveImageVert(tmpimg, vert_kernel)
-	#return imgout
+	tmpimg = _convolveImageHoriz(imgin, horiz_kernel)
+	imgout = _convolveImageVert(tmpimg, vert_kernel)
+	return imgout
 
 
 #*********************************************************************

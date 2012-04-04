@@ -186,11 +186,11 @@ def _KLTSelectGoodFeatures(tc,img,nFeatures,mode):
 		if tc.smoothBeforeSelecting:
 			#_KLT_FloatImage tmpimg;
 			#tmpimg = Image.new("F", img.size)
-			tmpimg = img.convert("F")
+			tmpimg = np.array(img.convert("F"))
 			floatimg = KLTComputeSmoothedImage(tmpimg, KLTComputeSmoothSigma(tc))
 			#_KLTFreeFloatImage(tmpimg)
 		else:
-			floatimg = img.convert("F")
+			floatimg = np.array(img.convert("F"))
 
 		# Compute gradient of image in x and y direction 
 		gradx, grady = KLTComputeGradients(floatimg, tc.grad_sigma)
@@ -223,11 +223,11 @@ def _KLTSelectGoodFeatures(tc,img,nFeatures,mode):
 	#for (i = 0 ; i < sizeof(int) ; i++)  limit *= 256;
 	#limit = limit/2 - 1;
 		
-	gradxArr = np.array(gradx)
-	gradyArr = np.array(grady)
+	#gradxArr = np.array(gradx)
+	#gradyArr = np.array(grady)
 
-	pointlistx,pointlisty,pointlistval=goodFeaturesUtils.ScanImageForGoodFeatures(gradxArr,\
-		gradyArr, borderx, bordery, window_hw, window_hh, tc.nSkippedPixels)
+	pointlistx,pointlisty,pointlistval=goodFeaturesUtils.ScanImageForGoodFeatures(gradx,\
+		grady, borderx, bordery, window_hw, window_hh, tc.nSkippedPixels)
 			
 	# Sort the features 
 	pointlist = zip(pointlistval, pointlistx, pointlisty)

@@ -32,7 +32,10 @@ cdef float SumGradientInWindow(int x,int y,int window_hh,int window_hw, np.ndarr
 
 #**********************************************************************
 
-def ScanImageForGoodFeatures(gradxArr, gradyArr, int borderx, int bordery, int window_hw, int window_hh, int nSkippedPixels):
+def ScanImageForGoodFeatures(np.ndarray[np.float32_t,ndim=2] gradxArr, 
+	np.ndarray[np.float32_t,ndim=2] gradyArr, 
+	int borderx, int bordery, int window_hw, int window_hh, int nSkippedPixels):
+
 	cdef float val, gxx, gxy, gyy
 	cdef int x, y
 	cdef int nrows = gradxArr.shape[0]
@@ -43,9 +46,9 @@ def ScanImageForGoodFeatures(gradxArr, gradyArr, int borderx, int bordery, int w
 	pointlistval = []
 	pointlistx, pointlisty = [], []
 
-	cdef np.ndarray[np.float32_t,ndim=2] gradxxCumSum2 = np.power(gradxArr,2.).cumsum(axis=1).cumsum(axis=0)
-	cdef np.ndarray[np.float32_t,ndim=2] gradyxCumSum2 = (gradxArr * gradyArr).cumsum(axis=1).cumsum(axis=0)
-	cdef np.ndarray[np.float32_t,ndim=2] gradyyCumSum2 = np.power(gradyArr,2.).cumsum(axis=1).cumsum(axis=0)
+	cdef np.ndarray[np.float32_t,ndim=2] gradxxCumSum2 = np.power(gradxArr,2.).cumsum(1).cumsum(0)
+	cdef np.ndarray[np.float32_t,ndim=2] gradyxCumSum2 = (gradxArr * gradyArr).cumsum(1).cumsum(0)
+	cdef np.ndarray[np.float32_t,ndim=2] gradyyCumSum2 = np.power(gradyArr,2.).cumsum(1).cumsum(0)
 
 	for y in range(bordery, nrows - bordery, nSkippedPixels + 1):
 		for x in range(borderx, ncols - borderx, nSkippedPixels + 1):
