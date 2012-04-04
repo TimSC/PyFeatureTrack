@@ -46,6 +46,9 @@ def main():
 	#fl = pickle.load(open("featurelist.dat"))
 
 	KLTTrackFeatures(tc, img1, img2, fl)
+	#for i in range(50):
+	#	KLTTrackFeatures(tc, img1, img2, fl)
+	#	KLTTrackFeatures(tc, img2, img1, fl)
 
 	print "\nIn second image:"
 	for i, feat in enumerate(fl):

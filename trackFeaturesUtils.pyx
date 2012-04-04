@@ -5,6 +5,7 @@
 
 import numpy as np
 cimport numpy as np
+from klt import *
 
 #*********************************************************************
 #* interpolate
@@ -19,6 +20,7 @@ cdef float interpolate(float x, float y, np.ndarray[np.float32_t,ndim=2] img):
 	cdef int yt = int(y)
 	cdef float ax = x - xt
 	cdef float ay = y - yt
+	cdef float out
 
 	cdef int ncols = img.shape[1]
 	cdef int nrows = img.shape[0]
@@ -31,10 +33,11 @@ cdef float interpolate(float x, float y, np.ndarray[np.float32_t,ndim=2] img):
 
 	assert xt >= 0 and yt >= 0 and xt <= ncols - 2 and yt <= nrows - 2
 
-	return ( (1-ax) * (1-ay) * img[yt,xt] + \
+	out = (1-ax) * (1-ay) * img[yt,xt] + \
 		ax   * (1-ay) * img[yt,xt+1] + \
 		(1-ax) *   ay   * img[yt+1,xt] + \
-		ax   *   ay   * img[yt+1,xt+1] )
+		ax   *   ay   * img[yt+1,xt+1]
+	return out
 
 
 #*********************************************************************
@@ -204,4 +207,137 @@ def _computeGradientSum(np.ndarray[np.float32_t,ndim=2] gradx1,  # gradient imag
 #      *grady++ = g1+ g2*alpha;
 #    }  
 #}
+
+#*********************************************************************
+#* _compute2by1ErrorVector
+#*
+#*
+
+def _compute2by1ErrorVector(imgdiff,
+	gradx,
+	grady,
+	width, # size of window
+	height,
+	step_factor): # 2.0 comes from equations, 1.0 seems to avoid overshooting
+
+	# Compute values
+	ex = 0.
+	ey = 0.
+	ind = 0
+	for i in range(width * height):
+		diff = imgdiff[ind]
+		ex += diff * gradx[ind]
+		ey += diff * grady[ind]
+		ind += 1
+
+	ex *= step_factor
+	ey *= step_factor
+
+	return ex, ey
+
+#*********************************************************************
+#* _compute2by2GradientMatrix
+#*
+#*
+
+def _compute2by2GradientMatrix(gradx, grady,
+	width,   # size of window */
+	height):
+
+	# Compute values 
+	gxx = 0.0
+	gxy = 0.0
+	gyy = 0.0
+	ind = 0
+	for i in range(width * height):
+		gx = gradx[ind]
+		gy = grady[ind]
+		gxx += gx*gx;
+		gxy += gx*gy;
+		gyy += gy*gy;
+		ind += 1
+
+	return gxx, gxy, gyy
+	
+
+
+
+#*********************************************************************
+#* _solveEquation
+#*
+#* Solves the 2x2 matrix equation
+#*         [gxx gxy] [dx] = [ex]
+#*         [gxy gyy] [dy] = [ey]
+#* for dx and dy.
+#*
+#* Returns KLT_TRACKED on success and KLT_SMALL_DET on failure
+#*
+
+def _solveEquation(gxx, gxy, gyy,
+	ex, ey,
+	small):
+
+	det = gxx*gyy - gxy*gxy
+	
+	if det < small: return kltState.KLT_SMALL_DET, None, None
+
+	dx = (gyy*ex - gxy*ey)/det
+	dy = (gxx*ey - gxy*ex)/det
+	return kltState.KLT_TRACKED, dx, dy
+
+#*********************************************************************
+
+def trackFeatureIterate(x1, y1, x2, y2, img1, gradx1, grady1, img2, gradx2, grady2, tc):
+
+	width = tc.window_width # size of window
+	height = tc.window_height 
+	lighting_insensitive = tc.lighting_insensitive # whether to normalize for gain and bias 
+	step_factor = tc.step_factor # 2.0 comes from equations, 1.0 seems to avoid overshooting
+	small = tc.min_determinant # determinant threshold for declaring KLT_SMALL_DET 
+	th = tc.min_displacement # displacement threshold for stopping             
+	max_iterations = tc.max_iterations 
+
+	iteration = 0
+	one_plus_eps = 1.001   # To prevent rounding errors 
+	hw = width/2
+	hh = height/2
+	nc = img1.shape[1]
+	nr = img1.shape[0]
+
+	# Iteratively update the window position 
+	while True:
+
+		# If out of bounds, exit loop 
+		if x1-hw < 0. or nc-( x1+hw) < one_plus_eps or \
+			x2-hw < 0. or nc-(x2+hw) < one_plus_eps or \
+			y1-hh < 0. or nr-( y1+hh) < one_plus_eps or \
+			y2-hh < 0. or nr-(y2+hh) < one_plus_eps:
+			status = kltState.KLT_OOB
+			break
+
+		# Compute gradient and difference windows 
+		if lighting_insensitive:
+			raise Exception("Not implemented")
+			#imgdiff = _computeIntensityDifferenceLightingInsensitive(img1, img2, x1, y1, x2, y2, width, height)
+			#gradx, grady = _computeGradientSumLightingInsensitive(gradx1, grady1, gradx, grady2, img1, img2, x1, y1, x2, y2, width, height)
+		else:
+			imgdiff = _computeIntensityDifference(img1, img2, x1, y1, x2, y2, width, height)
+			gradx, grady = _computeGradientSum(gradx1, grady1, gradx2, grady2, x1, y1, x2, y2, width, height)
+
+		# Use these windows to construct matrices 
+		gxx, gxy, gyy = _compute2by2GradientMatrix(gradx, grady, width, height)
+		ex, ey = _compute2by1ErrorVector(imgdiff, gradx, grady, width, height, step_factor)
+
+		# Using matrices, solve equation for new displacement */
+		status, dx, dy = _solveEquation(gxx, gxy, gyy, ex, ey, small)
+		if status == kltState.KLT_SMALL_DET: break
+
+		x2 += dx
+		y2 += dy
+		iteration += 1
+
+		if not ((abs(dx)>=th or abs(dy)>=th) and iteration < max_iterations): break
+
+	return x2, y2, status, iteration
+
 
