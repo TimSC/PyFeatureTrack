@@ -10,25 +10,7 @@ from convolve import *
 from pyramid import *
 from klt_util import *
 from PIL import Image
-import trackFeaturesUtils
-
-#*********************************************************************
-#* _sumAbsFloatWindow
-#*
-
-def _sumAbsFloatWindow(fw, width, height):
-	return np.abs(np.array(fw)).sum()
-
-	#sum = 0.
-	#fwind = 0
-
-	#for h in range(height,0,-1):
-	#	for w in range(width):
-	#		sum += float(abs(fw[fwind]))
-	#		fwind += 1
-
-	#return sum
-
+import trackFeaturesUtils, warnings
 
 #*********************************************************************
 
@@ -49,9 +31,12 @@ def trackFeatureIterateSciPy(x1, y1, x2, y2, img1, gradx1, grady1, img2, gradx2,
 	nc = img1.shape[1]
 	nr = img1.shape[0]
 
-	soln = scipy.optimize.leastsq(func=trackFeaturesUtils.minFunc, 
-		x0=(x2, y2), args=(img1, img2, x1, y1, width, height, tc, gradx1, grady1, gradx2, grady2), 
-		Dfun=trackFeaturesUtils.jacobian,factor=step_factor)
+	with warnings.catch_warnings():
+		warnings.simplefilter("ignore") #Surpress warnings about max iterations
+
+		soln = scipy.optimize.leastsq(func=trackFeaturesUtils.minFunc, 
+			x0=(x2, y2), args=(img1, img2, x1, y1, width, height, tc, gradx1, grady1, gradx2, grady2), 
+			Dfun=trackFeaturesUtils.jacobian,factor=step_factor,maxfev=max_iterations)
 	status = kltState.KLT_TRACKED
 	x2 = soln[0][0]
 	y2 = soln[0][1]
@@ -159,8 +144,8 @@ def _trackFeature(
 	nr = img1.shape[0]
 	one_plus_eps = 1.001   # To prevent rounding errors 
 
-	x2, y2, status, iteration = trackFeatureIterateCKLT(x1, y1, x2, y2, img1, gradx1, grady1, img2, gradx2, grady2, tc)
-	#x2, y2, status, iteration = trackFeatureIterateSciPy(x1, y1, x2, y2, img1, gradx1, grady1, img2, gradx2, grady2, tc)
+	#x2, y2, status, iteration = trackFeatureIterateCKLT(x1, y1, x2, y2, img1, gradx1, grady1, img2, gradx2, grady2, tc)
+	x2, y2, status, iteration = trackFeatureIterateSciPy(x1, y1, x2, y2, img1, gradx1, grady1, img2, gradx2, grady2, tc)
 
 	# Check whether window is out of bounds 
 	if x2-hw < 0.0 or nc-(x2+hw) < one_plus_eps or y2-hh < 0.0 or nr-(y2+hh) < one_plus_eps:
