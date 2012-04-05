@@ -102,26 +102,19 @@ def _computeGradientSum(np.ndarray[np.float32_t,ndim=2] gradx1,  # gradient imag
 	gradx = []
 
 	img1GradxPatch = np.empty((height, width))
-	#img1GradyPatch = np.empty((height, width))
 	for j in range(-hh, hh + 1):
 		for i in range(-hw, hw + 1):
 			img1GradxPatch[j+hh,i+hw] = interpolate(x1+i, y1+j, gradx1)
-			#img1GradyPatch[j+hh,i+hw] = interpolate(x1+i, y1+j, grady1)
 
-	# Compute values
+	img2Patch = np.empty((height, width))
 	for j in range(-hh, hh + 1):
 		for i in range(-hw, hw + 1):
-			#g1a = interpolate(x1+i, y1+j, gradx1)
-			g1 = img1GradxPatch[j+hh, i+hw]
-			#print g1a, g1
-			g2 = interpolate(x2+i, y2+j, gradx2)
-			gradx.append(g1 + g2)
-			#g1 = interpolate(x1+i, y1+j, grady1)
-			#g1 = img1GradyPatch[j+hh, i+hw]
-			#g2 = interpolate(x2+i, y2+j, grady2)
-			#grady.append(g1 + g2)
+			img2Patch[j+hh,i+hw] = interpolate(x2+i, y2+j, gradx2)
 
-	return gradx
+	sumImg = img1GradxPatch + img2Patch
+	sumImg = sumImg.reshape((sumImg.shape[0] * sumImg.shape[1]))
+
+	return sumImg
 
 #*********************************************************************
 #* _computeIntensityDifferenceLightingInsensitive
