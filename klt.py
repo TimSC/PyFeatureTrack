@@ -60,13 +60,12 @@ class KLT_TrackingContext:
 		self.pyramid_last = None
 		self.pyramid_last_gradx = None
 		self.pyramid_last_grady = None
-		self.removeHighResidualTrackers = False
 		# for affine mapping
 		self.affineConsistencyCheck = -1
 		self.affine_window_width = 15
 		self.affine_window_height = 15
 		self.affine_max_iterations = 10
-		self.affine_max_residue = 10.
+		self.affine_max_residue = None #10.
 		self.affine_min_displacement = 0.02
 		self.affine_max_displacement_differ = 1.5
 
