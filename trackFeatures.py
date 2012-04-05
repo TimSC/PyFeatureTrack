@@ -17,15 +17,17 @@ import trackFeaturesUtils
 #*
 
 def _sumAbsFloatWindow(fw, width, height):
-	sum = 0.
-	fwind = 0
+	return np.abs(np.array(fw)).sum()
 
-	for h in range(height,0,-1):
-		for w in range(width):
-			sum += float(abs(fw[fwind]))
-			fwind += 1
+	#sum = 0.
+	#fwind = 0
 
-	return sum
+	#for h in range(height,0,-1):
+	#	for w in range(width):
+	#		sum += float(abs(fw[fwind]))
+	#		fwind += 1
+
+	#return sum
 
 
 #*********************************************************************
@@ -171,7 +173,7 @@ def _trackFeature(
 	  	else:
 			imgdiff = trackFeaturesUtils._computeIntensityDifference(img1, img2, x1, y1, x2, y2, width, height)
 
-		if _sumAbsFloatWindow(imgdiff, width, height)/(width*height) > max_residue:
+		if np.abs(np.array(imgdiff)).sum()/(width*height) > max_residue:
 			status = kltState.KLT_LARGE_RESIDUE
 
 	# Return appropriate value 
