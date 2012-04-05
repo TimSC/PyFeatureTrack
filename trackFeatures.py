@@ -144,14 +144,17 @@ def _trackFeature(
 	nr = img1.shape[0]
 	one_plus_eps = 1.001   # To prevent rounding errors 
 
-	img1Patch = np.empty((height, width))
-	img1GradxPatch = np.empty((height, width))
-	img1GradyPatch = np.empty((height, width))
-	for j in range(-hh, hh + 1):
-		for i in range(-hw, hw + 1):
-			img1Patch[j+hh,i+hw] = trackFeaturesUtils.interpolate(x1+i, y1+j, img1)
-			img1GradxPatch[j+hh,i+hw] = trackFeaturesUtils.interpolate(x1+i, y1+j, gradx1)
-			img1GradyPatch[j+hh,i+hw] = trackFeaturesUtils.interpolate(x1+i, y1+j, grady1)
+	#img1Patch = np.empty((height, width))
+	#img1GradxPatch = np.empty((height, width))
+	#img1GradyPatch = np.empty((height, width))
+	#for j in range(-hh, hh + 1):
+	#	for i in range(-hw, hw + 1):
+	#		img1Patch[j+hh,i+hw] = trackFeaturesUtils.interpolate(x1+i, y1+j, img1)
+	#		img1GradxPatch[j+hh,i+hw] = trackFeaturesUtils.interpolate(x1+i, y1+j, gradx1)
+	#		img1GradyPatch[j+hh,i+hw] = trackFeaturesUtils.interpolate(x1+i, y1+j, grady1)
+	img1Patch = trackFeaturesUtils.extractImagePatch(img1, x1, y1, height, width)
+	img1GradxPatch = trackFeaturesUtils.extractImagePatch(gradx1, x1, y1, height, width)
+	img1GradyPatch = trackFeaturesUtils.extractImagePatch(grady1, x1, y1, height, width)
 
 	#x2, y2, status, iteration = trackFeatureIterateCKLT(x2, y2, img1GradxPatch, img1GradyPatch, img1Patch, img2, gradx2, grady2, tc)
 	x2, y2, status, iteration = trackFeatureIterateSciPy(x2, y2, img1GradxPatch, img1GradyPatch, img1Patch, img2, gradx2, grady2, tc)

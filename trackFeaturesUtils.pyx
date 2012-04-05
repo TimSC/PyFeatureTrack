@@ -45,6 +45,18 @@ def interpolate(float x, float y, np.ndarray[np.float32_t,ndim=2] img):
 
 
 #*********************************************************************
+
+def extractImagePatch(img, x, y, height, width):
+
+	cdef int hw = width/2
+	cdef int hh = height/2
+	out = np.empty((height, width))
+	for j in range(-hh, hh + 1):
+		for i in range(-hw, hw + 1):
+			out[j+hh,i+hw] = interpolate(x+i, y+j, img)
+	return out
+
+#*********************************************************************
 #* _computeIntensityDifference
 #*
 #* Given two images and the window center in both images,
@@ -66,10 +78,11 @@ def _computeIntensityDifference(img1Patch,   # images
 	cdef float g1, g2
 	cdef int i, j
 
-	img2Patch = np.empty((height, width))
-	for j in range(-hh, hh + 1):
-		for i in range(-hw, hw + 1):
-			img2Patch[j+hh,i+hw] = interpolate(x2+i, y2+j, img2)
+	#img2Patch = np.empty((height, width))
+	#for j in range(-hh, hh + 1):
+	#	for i in range(-hw, hw + 1):
+	#		img2Patch[j+hh,i+hw] = interpolate(x2+i, y2+j, img2)
+	img2Patch = extractImagePatch(img2, x2, y2, height, width)
 
 	#print img1Patch.shape, img2Patch.shape
 	assert img1Patch.shape == img2Patch.shape
@@ -100,10 +113,11 @@ def _computeGradientSum(img1GradxPatch,  # gradient images
 	cdef int i, j
 	gradx = []
 
-	img2Patch = np.empty((height, width))
-	for j in range(-hh, hh + 1):
-		for i in range(-hw, hw + 1):
-			img2Patch[j+hh,i+hw] = interpolate(x2+i, y2+j, gradx2)
+	#img2Patch = np.empty((height, width))
+	#for j in range(-hh, hh + 1):
+	#	for i in range(-hw, hw + 1):
+	#		img2Patch[j+hh,i+hw] = interpolate(x2+i, y2+j, gradx2)
+	img2Patch = extractImagePatch(gradx2, x2, y2, height, width)
 
 	sumImg = img1GradxPatch + img2Patch
 	sumImg = sumImg.reshape((sumImg.shape[0] * sumImg.shape[1]))

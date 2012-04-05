@@ -17,6 +17,7 @@ def main():
 	tc = KLT_TrackingContext()
 	nFeatures = 50
 	tc.nSkippedPixels = 0
+	tc.max_residue = 10.0
 	
 	KLTPrintTrackingContext(tc)
 
