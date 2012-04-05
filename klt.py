@@ -51,7 +51,7 @@ class KLT_TrackingContext:
 		self.min_determinant = 0.01
 		self.max_iterations = 10
 		self.min_displacement = 0.1
-		self.max_residue = 10.0
+		self.max_residue = None #10.0
 		self.grad_sigma = 1.0
 		self.smooth_sigma_fact = 0.1
 		self.pyramid_sigma_fact = 0.9
@@ -65,7 +65,7 @@ class KLT_TrackingContext:
 		self.affine_window_width = 15
 		self.affine_window_height = 15
 		self.affine_max_iterations = 10
-		self.affine_max_residue = None #10.
+		self.affine_max_residue = 10.
 		self.affine_min_displacement = 0.02
 		self.affine_max_displacement_differ = 1.5
 
