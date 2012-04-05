@@ -15,7 +15,7 @@ import scipy.optimize
 #* gray-level value of the point in the image.  
 #*
 
-cdef float interpolate(float x, float y, np.ndarray[np.float32_t,ndim=2] img):
+def interpolate(float x, float y, np.ndarray[np.float32_t,ndim=2] img):
 
 	cdef int xt = int(x)  # coordinates of top-left corner 
 	cdef int yt = int(y)
@@ -49,10 +49,10 @@ cdef float interpolate(float x, float y, np.ndarray[np.float32_t,ndim=2] img):
 #* between the two overlaid images.
 #*
 
-def _computeIntensityDifference(np.ndarray[np.float32_t,ndim=2] img1,   # images 
+def _computeIntensityDifference(img1Patch,   # images 
 	np.ndarray[np.float32_t,ndim=2] img2,
-	float x1, 
-	float y1,     # center of window in 1st img
+	#float x1, 
+	#float y1,     # center of window in 1st img
 	float x2, 
 	float y2,     # center of window in 2nd img
 	int width, 
@@ -63,18 +63,18 @@ def _computeIntensityDifference(np.ndarray[np.float32_t,ndim=2] img1,   # images
 	cdef float g1, g2
 	cdef int i, j
 
-	imgdiff = []
-	#imgl1 = img1.load()
-	#imgl2 = img2.load()
-
-	# Compute values
+	img2Patch = np.empty((height, width))
 	for j in range(-hh, hh + 1):
 		for i in range(-hw, hw + 1):
-			g1 = interpolate(x1+i, y1+j, img1)
-			g2 = interpolate(x2+i, y2+j, img2)
-			imgdiff.append(g1 - g2)
-	
-	return imgdiff
+			img2Patch[j+hh,i+hw] = interpolate(x2+i, y2+j, img2)
+
+	#print img1Patch.shape, img2Patch.shape
+	assert img1Patch.shape == img2Patch.shape
+
+	diffImg = img1Patch - img2Patch
+	diffImg = diffImg.reshape((diffImg.shape[0] * diffImg.shape[1]))
+
+	return diffImg
 
 
 
@@ -286,7 +286,7 @@ def _solveEquation(gxx, gxy, gyy,
 	dy = (gxx*ey - gxy*ex)/det
 	return kltState.KLT_TRACKED, dx, dy
 
-def minFunc(xData, img1, img2, x1, y1, width, height, tc, gradx1, grady1, gradx2, grady2):
+def minFunc(xData, img1Patch, img1, img2, x1, y1, width, height, tc, gradx1, grady1, gradx2, grady2):
 	x2, y2 = xData
 
 	#print img1, img2, x1, y1, width, height
@@ -294,12 +294,12 @@ def minFunc(xData, img1, img2, x1, y1, width, height, tc, gradx1, grady1, gradx2
 		raise Exception("Not implemented")
 		#imgdiff = _computeIntensityDifferenceLightingInsensitive(img1, img2, x1, y1, x2, y2, width, height)
 	else:
-		imgdiff = _computeIntensityDifference(img1, img2, x1, y1, x2, y2, width, height)
+		imgdiff = _computeIntensityDifference(img1Patch, img2, x2, y2, width, height)
 
 	#print "test", x2, y2, np.array(imgdiff).sum()
 	return imgdiff
 
-def jacobian(xData, img1, img2, x1, y1, width, height, tc, gradx1, grady1, gradx2, grady2):
+def jacobian(xData, img1Patch, img1, img2, x1, y1, width, height, tc, gradx1, grady1, gradx2, grady2):
 	x2, y2 = xData
 	#print img1, img2, x1, y1, width, height
 	if tc.lighting_insensitive:
