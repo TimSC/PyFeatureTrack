@@ -153,8 +153,8 @@ def _trackFeature(
 			img1GradxPatch[j+hh,i+hw] = trackFeaturesUtils.interpolate(x1+i, y1+j, gradx1)
 			img1GradyPatch[j+hh,i+hw] = trackFeaturesUtils.interpolate(x1+i, y1+j, grady1)
 
-	x2, y2, status, iteration = trackFeatureIterateCKLT(x2, y2, img1GradxPatch, img1GradyPatch, img1Patch, img2, gradx2, grady2, tc)
-	#x2, y2, status, iteration = trackFeatureIterateSciPy(x2, y2, img1GradxPatch, img1GradyPatch, img1Patch, img2, gradx2, grady2, tc)
+	#x2, y2, status, iteration = trackFeatureIterateCKLT(x2, y2, img1GradxPatch, img1GradyPatch, img1Patch, img2, gradx2, grady2, tc)
+	x2, y2, status, iteration = trackFeatureIterateSciPy(x2, y2, img1GradxPatch, img1GradyPatch, img1Patch, img2, gradx2, grady2, tc)
 
 	# Check whether window is out of bounds 
 	if x2-hw < 0.0 or nc-(x2+hw) < one_plus_eps or y2-hh < 0.0 or nr-(y2+hh) < one_plus_eps:
