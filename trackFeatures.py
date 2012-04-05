@@ -161,7 +161,7 @@ def _trackFeature(
 		status = kltState.KLT_OOB
 
 	# Check whether residue is too large 
-	if status == kltState.KLT_TRACKED:
+	if status == kltState.KLT_TRACKED and tc.removeHighResidualTrackers:
 		if lighting_insensitive:
 			imgdiff = trackFeaturesUtils._computeIntensityDifferenceLightingInsensitive(img1Patch, img2, x1, y1, x2, y2, width, height)
 	  	else:
