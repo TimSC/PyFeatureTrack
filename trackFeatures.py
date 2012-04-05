@@ -89,7 +89,8 @@ def trackFeatureIterateCKLT(x1, y1, x2, y2, img1, gradx1, grady1, img1Patch, img
 			#gradx, grady = trackFeaturesUtils._computeGradientSumLightingInsensitive(gradx1, grady1, gradx, grady2, img1, img2, x1, y1, x2, y2, width, height)
 		else:
 			imgdiff = trackFeaturesUtils._computeIntensityDifference(img1Patch, img2, x2, y2, width, height)
-			gradx, grady = trackFeaturesUtils._computeGradientSum(gradx1, grady1, gradx2, grady2, x1, y1, x2, y2, width, height)
+			gradx = trackFeaturesUtils._computeGradientSum(gradx1, gradx2, x1, y1, x2, y2, width, height)
+			grady = trackFeaturesUtils._computeGradientSum(grady1, grady2, x1, y1, x2, y2, width, height)
 
 		# Use these windows to construct matrices 
 		gxx, gxy, gyy = trackFeaturesUtils._compute2by2GradientMatrix(gradx, grady, width, height)
@@ -151,8 +152,8 @@ def _trackFeature(
 		for i in range(-hw, hw + 1):
 			img1Patch[j+hh,i+hw] = trackFeaturesUtils.interpolate(x1+i, y1+j, img1)
 
-	#x2, y2, status, iteration = trackFeatureIterateCKLT(x1, y1, x2, y2, img1Patch, gradx1, grady1, img2, gradx2, grady2, tc)
-	x2, y2, status, iteration = trackFeatureIterateSciPy(x1, y1, x2, y2, img1, gradx1, grady1, img1Patch, img2, gradx2, grady2, tc)
+	x2, y2, status, iteration = trackFeatureIterateCKLT(x1, y1, x2, y2, img1, gradx1, grady1, img1Patch, img2, gradx2, grady2, tc)
+	#x2, y2, status, iteration = trackFeatureIterateSciPy(x1, y1, x2, y2, img1, gradx1, grady1, img1Patch, img2, gradx2, grady2, tc)
 
 	# Check whether window is out of bounds 
 	if x2-hw < 0.0 or nc-(x2+hw) < one_plus_eps or y2-hh < 0.0 or nr-(y2+hh) < one_plus_eps:

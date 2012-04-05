@@ -32,7 +32,10 @@ def interpolate(float x, float y, np.ndarray[np.float32_t,ndim=2] img):
 	#		print "(xt,yt)=({0},{1})  imgsize=({2},{3})\n(x,y)=({4},{5})  (ax,ay)=({6},{7})".format(
 	#			xt, yt, ncols, nrows, x, y, ax, ay)
 
-	assert xt >= 0 and yt >= 0 and xt <= ncols - 2 and yt <= nrows - 2
+	if xt < 0 or yt < 0 or xt > ncols - 2 or yt > nrows - 2:
+		return 0.
+
+	#assert xt >= 0 and yt >= 0 and xt <= ncols - 2 and yt <= nrows - 2
 
 	out = (1-ax) * (1-ay) * img[yt,xt] + \
 		ax   * (1-ay) * img[yt,xt+1] + \
@@ -87,9 +90,7 @@ def _computeIntensityDifference(img1Patch,   # images
 #*
 
 def _computeGradientSum(np.ndarray[np.float32_t,ndim=2] gradx1,  # gradient images
-	np.ndarray[np.float32_t,ndim=2] grady1,
 	np.ndarray[np.float32_t,ndim=2] gradx2,
-	np.ndarray[np.float32_t,ndim=2] grady2,
 	float x1, float y1,      # center of window in 1st img
 	float x2, float y2,      # center of window in 2nd img
 	int width, int height):   # size of window
@@ -98,19 +99,29 @@ def _computeGradientSum(np.ndarray[np.float32_t,ndim=2] gradx1,  # gradient imag
 	cdef int hh = height/2
 	cdef float g1, g2
 	cdef int i, j
-	gradx, grady = [], []
+	gradx = []
+
+	img1GradxPatch = np.empty((height, width))
+	#img1GradyPatch = np.empty((height, width))
+	for j in range(-hh, hh + 1):
+		for i in range(-hw, hw + 1):
+			img1GradxPatch[j+hh,i+hw] = interpolate(x1+i, y1+j, gradx1)
+			#img1GradyPatch[j+hh,i+hw] = interpolate(x1+i, y1+j, grady1)
 
 	# Compute values
 	for j in range(-hh, hh + 1):
 		for i in range(-hw, hw + 1):
-			g1 = interpolate(x1+i, y1+j, gradx1)
+			#g1a = interpolate(x1+i, y1+j, gradx1)
+			g1 = img1GradxPatch[j+hh, i+hw]
+			#print g1a, g1
 			g2 = interpolate(x2+i, y2+j, gradx2)
 			gradx.append(g1 + g2)
-			g1 = interpolate(x1+i, y1+j, grady1)
-			g2 = interpolate(x2+i, y2+j, grady2)
-			grady.append(g1 + g2)
+			#g1 = interpolate(x1+i, y1+j, grady1)
+			#g1 = img1GradyPatch[j+hh, i+hw]
+			#g2 = interpolate(x2+i, y2+j, grady2)
+			#grady.append(g1 + g2)
 
-	return gradx, grady
+	return gradx
 
 #*********************************************************************
 #* _computeIntensityDifferenceLightingInsensitive
@@ -306,7 +317,8 @@ def jacobian(xData, img1Patch, img1, img2, x1, y1, width, height, tc, gradx1, gr
 		raise Exception("Not implemented")
 		#gradx, grady = _computeGradientSumLightingInsensitive(gradx1, grady1, gradx, grady2, img1, img2, x1, y1, x2, y2, width, height)
 	else:
-		gradx, grady = _computeGradientSum(gradx1, grady1, gradx2, grady2, x1, y1, x2, y2, width, height)
+		gradx = _computeGradientSum(gradx1, gradx2, x1, y1, x2, y2, width, height)
+		grady = _computeGradientSum(grady1, grady2, x1, y1, x2, y2, width, height)
 	out = - np.array([gradx, grady]).transpose()
 	#print out.shape
 	
