@@ -7,54 +7,30 @@ import numpy as np
 cimport numpy as np
 from klt import *
 import scipy.optimize
+import scipy.ndimage
 
 #*********************************************************************
-#* interpolate
-#* 
-#* Given a point (x,y) in an image, computes the bilinear interpolated 
-#* gray-level value of the point in the image.  
-#*
 
-def interpolate(float x, float y, np.ndarray[np.float32_t,ndim=2] img):
+def extractImagePatch(np.ndarray[np.float32_t,ndim=2] img, float x, float y, int height, int width):
+
+	cdef int hw = width/2
+	cdef int hh = height/2
 
 	cdef int xt = int(x)  # coordinates of top-left corner 
 	cdef int yt = int(y)
 	cdef float ax = x - xt
 	cdef float ay = y - yt
-	cdef float out
 
-	cdef int ncols = img.shape[1]
-	cdef int nrows = img.shape[0]
+	workingArea = img[y-hh: y+hh+2, x-hw: x+hw+2]
+	kernel = np.zeros((3,3))
+	kernel[1,1] = (1.-ax) * (1.-ay)
+	kernel[0,0] = ax * ay
+	kernel[1,0] = ax * (1.-ay)
+	kernel[0,1] = (1.-ax) * ay
 
-	#_DNDEBUG = False
-	#if not _DNDEBUG:
-	#	if (xt<0 or yt<0 or xt>=ncols-1 or yt>=nrows-1):
-	#		print "(xt,yt)=({0},{1})  imgsize=({2},{3})\n(x,y)=({4},{5})  (ax,ay)=({6},{7})".format(
-	#			xt, yt, ncols, nrows, x, y, ax, ay)
+	patch = scipy.ndimage.filters.convolve(workingArea, kernel)
 
-	if xt < 0 or yt < 0 or xt > ncols - 2 or yt > nrows - 2:
-		return 0.
-
-	#assert xt >= 0 and yt >= 0 and xt <= ncols - 2 and yt <= nrows - 2
-
-	out = (1-ax) * (1-ay) * img[yt,xt] + \
-		ax   * (1-ay) * img[yt,xt+1] + \
-		(1-ax) *   ay   * img[yt+1,xt] + \
-		ax   *   ay   * img[yt+1,xt+1]
-	return out
-
-
-#*********************************************************************
-
-def extractImagePatch(img, x, y, height, width):
-
-	cdef int hw = width/2
-	cdef int hh = height/2
-	out = np.empty((height, width))
-	for j in range(-hh, hh + 1):
-		for i in range(-hw, hw + 1):
-			out[j+hh,i+hw] = interpolate(x+i, y+j, img)
-	return out
+	return patch[:height,:width]
 
 #*********************************************************************
 #* _computeIntensityDifference
@@ -78,13 +54,8 @@ def _computeIntensityDifference(img1Patch,   # images
 	cdef float g1, g2
 	cdef int i, j
 
-	#img2Patch = np.empty((height, width))
-	#for j in range(-hh, hh + 1):
-	#	for i in range(-hw, hw + 1):
-	#		img2Patch[j+hh,i+hw] = interpolate(x2+i, y2+j, img2)
 	img2Patch = extractImagePatch(img2, x2, y2, height, width)
 
-	#print img1Patch.shape, img2Patch.shape
 	assert img1Patch.shape == img2Patch.shape
 
 	diffImg = img1Patch - img2Patch
