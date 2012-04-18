@@ -10,39 +10,6 @@ import scipy.optimize
 import scipy.ndimage
 
 #*********************************************************************
-#* interpolate
-#* 
-#* Given a point (x,y) in an image, computes the bilinear interpolated 
-#* gray-level value of the point in the image.  
-#*
-
-cdef float interpolate(float x, float y, np.ndarray[np.float32_t,ndim=2] img):
-
-	cdef int xt = int(x)  # coordinates of top-left corner 
-	cdef int yt = int(y)
-	cdef float ax = x - xt
-	cdef float ay = y - yt
-	cdef float out
-
-	cdef int ncols = img.shape[1]
-	cdef int nrows = img.shape[0]
-
-	#_DNDEBUG = False
-	#if not _DNDEBUG:
-	#	if (xt<0 or yt<0 or xt>=ncols-1 or yt>=nrows-1):
-	#		print "(xt,yt)=({0},{1})  imgsize=({2},{3})\n(x,y)=({4},{5})  (ax,ay)=({6},{7})".format(
-	#			xt, yt, ncols, nrows, x, y, ax, ay)
-
-	assert xt >= 0 and yt >= 0 and xt <= ncols - 2 and yt <= nrows - 2
-
-	out = (1-ax) * (1-ay) * img[yt,xt] + \
-		ax   * (1-ay) * img[yt,xt+1] + \
-		(1-ax) *   ay   * img[yt+1,xt] + \
-		ax   *   ay   * img[yt+1,xt+1]
-	return out
-
-
-#*********************************************************************
 
 def extractImagePatchSlow(np.ndarray[np.float32_t,ndim=2] img, float x, float y, int height, int width):
 
@@ -50,16 +17,32 @@ def extractImagePatchSlow(np.ndarray[np.float32_t,ndim=2] img, float x, float y,
 	extractImagePatchOptimised(img, x, y, patch)
 	return patch
 
-def extractImagePatchOptimised(img2, x2, y2, out):
+def extractImagePatchOptimised(np.ndarray[np.float32_t,ndim=2] img, float x, float y, np.ndarray[np.float32_t,ndim=2] out):
 
-	hh = out.shape[0] / 2
-	hw = out.shape[1] / 2
+	cdef int i, j, ix = int(x), iy = int(y)
+	cdef int hh = out.shape[0] / 2
+	cdef int hw = out.shape[1] / 2
+	cdef float val
+	cdef float ax = x - int(x) #Get decimal part of x and y
+	cdef float ay = y - int(y)
+	cdef int ncols = img.shape[1]
+	cdef int nrows = img.shape[0]
+
+	assert ix - hw >= 0 and iy - hh >= 0 and ix + hw + 1 <= ncols - 2 and iy + hh + 1 <= nrows - 2
 
 	# Compute values
-	for j in range(-hh, hh + 1):
-		for i in range(-hw, hw + 1):
-			g2 = interpolate(x2+i, y2+j, img2)
-			out[j + hh,i + hw] = g2	
+	for j in range(ncols):
+		for i in range(nrows):
+			#val = interpolate(x+i-hw, y+j-hh, img)
+			vx = ix+i-hw
+			vy = iy+j-hh
+
+			val = (1.-ax) * (1.-ay) * img[vy,vx] + \
+				ax   * (1.-ay) * img[vy,vx+1] + \
+				(1.-ax) *   ay   * img[vy+1,vx] + \
+				ax   *   ay   * img[vy+1,vx+1]
+
+			out[j,i] = val
 
 #*********************************************************************
 #* _computeIntensityDifference
