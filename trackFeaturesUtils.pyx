@@ -101,7 +101,7 @@ def _computeGradientSum(np.ndarray[np.float32_t,ndim=2] img1GradxPatch,  # gradi
 	cdef int hh = workingPatch.shape[0]/2
 	cdef float g1, g2
 	cdef int i, j
-	gradx, grady = [], []
+	#gradx, grady = [], []
 
 	extractImagePatchOptimised(gradx2, x2, y2, workingPatch)
 
@@ -110,10 +110,10 @@ def _computeGradientSum(np.ndarray[np.float32_t,ndim=2] img1GradxPatch,  # gradi
 		for i in range(-hw, hw + 1):
 			g1 = img1GradxPatch[j+hh, i+hw]
 			g2 = workingPatch[j+hh, i+hw]
-			gradx.append(g1 + g2)
+			#gradx.append(g1 + g2)
 			workingPatch[j+hh, i+hw] = g1 + g2
 
-	return np.array(gradx, np.float32)
+	#return np.array(gradx, np.float32)
 
 #*********************************************************************
 #* _computeIntensityDifferenceLightingInsensitive
@@ -323,8 +323,8 @@ def jacobian(xData, np.ndarray[np.float32_t,ndim=2] img1Patch,
 		raise Exception("Not implemented")
 		#gradx, grady = _computeGradientSumLightingInsensitive(gradx1, grady1, gradx, grady2, img1, img2, x1, y1, x2, y2, workingPatch)
 	else:
-		gradx = _computeGradientSum(img1GradxPatch, gradx2, x2, y2, gradxImg)
-		grady = _computeGradientSum(img1GradyPatch, grady2, x2, y2, gradyImg)
+		_computeGradientSum(img1GradxPatch, gradx2, x2, y2, gradxImg)
+		_computeGradientSum(img1GradyPatch, grady2, x2, y2, gradyImg)
 
 	gradxImgReshaped = gradxImg.reshape((gradxImg.size, 1))
 	gradyImgReshaped = gradyImg.reshape((gradyImg.size, 1))

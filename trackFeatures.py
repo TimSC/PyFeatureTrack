@@ -87,8 +87,8 @@ def trackFeatureIterateCKLT(x2, y2, img1GradxPatch, img1GradyPatch, img1Patch, i
 		else:
 			imgdiff = trackFeaturesUtils._computeIntensityDifference(img1Patch, img2, x2, y2, workingPatch)
 
-			gradx = trackFeaturesUtils._computeGradientSum(img1GradxPatch, gradx2, x2, y2, workingPatch)
-			grady = trackFeaturesUtils._computeGradientSum(img1GradyPatch, grady2, x2, y2, workingPatch)
+			trackFeaturesUtils._computeGradientSum(img1GradxPatch, gradx2, x2, y2, gradx)
+			trackFeaturesUtils._computeGradientSum(img1GradyPatch, grady2, x2, y2, grady)
 
 		# Use these windows to construct matrices 
 		gxx, gxy, gyy = trackFeaturesUtils._compute2by2GradientMatrix(gradx, grady, width, height)
