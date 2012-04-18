@@ -10,6 +10,39 @@ import scipy.optimize
 import scipy.ndimage
 
 #*********************************************************************
+#* interpolate
+#* 
+#* Given a point (x,y) in an image, computes the bilinear interpolated 
+#* gray-level value of the point in the image.  
+#*
+
+cdef float interpolate(float x, float y, np.ndarray[np.float32_t,ndim=2] img):
+
+	cdef int xt = int(x)  # coordinates of top-left corner 
+	cdef int yt = int(y)
+	cdef float ax = x - xt
+	cdef float ay = y - yt
+	cdef float out
+
+	cdef int ncols = img.shape[1]
+	cdef int nrows = img.shape[0]
+
+	#_DNDEBUG = False
+	#if not _DNDEBUG:
+	#	if (xt<0 or yt<0 or xt>=ncols-1 or yt>=nrows-1):
+	#		print "(xt,yt)=({0},{1})  imgsize=({2},{3})\n(x,y)=({4},{5})  (ax,ay)=({6},{7})".format(
+	#			xt, yt, ncols, nrows, x, y, ax, ay)
+
+	assert xt >= 0 and yt >= 0 and xt <= ncols - 2 and yt <= nrows - 2
+
+	out = (1-ax) * (1-ay) * img[yt,xt] + \
+		ax   * (1-ay) * img[yt,xt+1] + \
+		(1-ax) *   ay   * img[yt+1,xt] + \
+		ax   *   ay   * img[yt+1,xt+1]
+	return out
+
+
+#*********************************************************************
 
 def extractImagePatch(np.ndarray[np.float32_t,ndim=2] img, float x, float y, int height, int width):
 
@@ -20,6 +53,8 @@ def extractImagePatch(np.ndarray[np.float32_t,ndim=2] img, float x, float y, int
 	cdef int yt = int(y)
 	cdef float ax = x - xt
 	cdef float ay = y - yt
+	cdef float p00, p01, p10, p11
+	cdef float v00, v01, v10, v11
 	cdef np.ndarray[np.float32_t,ndim=2] kernel = np.zeros((3,3), np.float32)
 
 	workingArea = img[yt-hh: yt+hh+2, xt-hw: xt+hw+2]
@@ -29,9 +64,29 @@ def extractImagePatch(np.ndarray[np.float32_t,ndim=2] img, float x, float y, int
 	kernel[1,0] = ax * (1.-ay)
 	kernel[0,1] = (1.-ax) * ay
 
-	patch = scipy.ndimage.filters.convolve(workingArea, kernel)
+	v00 = ax * ay
+	v01 = (1.-ax) * ay
+	v10 = ax * (1.-ay)
+	v11 = (1.-ax) * (1.-ay)
 
-	return patch[:height,:width]
+	patch = np.empty((height, width), np.float32)
+	for k in range(height):
+		for i in range(width):
+			p00 = v00 * img[k + yt - hh - 1, i + xt - hw - 1]
+			p01 = v01 * img[k + yt - hh, i + xt - hw - 1]
+			p10 = v10 * img[k + yt - hh - 1, i + xt - hw]
+			p11 = v11 * img[k + yt - hh, i + xt - hw]
+			patch[k,i] = p00 + p01 + p10 + p11
+
+	patch2 = scipy.ndimage.filters.convolve(workingArea, kernel)
+	patch2 = patch2[:height,:width]
+
+	#print patch[0,0], patch2[0,0]
+	#print patch.shape, patch2.shape
+	#diff = (patch - patch2).sum()
+	#print diff
+
+	return patch2
 
 #*********************************************************************
 #* _computeIntensityDifference
@@ -40,6 +95,29 @@ def extractImagePatch(np.ndarray[np.float32_t,ndim=2] img, float x, float y, int
 #* aligns the images wrt the window and computes the difference 
 #* between the two overlaid images.
 #*
+
+#def _computeIntensityDifference(img1Patch,   # images 
+#	np.ndarray[np.float32_t,ndim=2] img2,
+#	#float x1, 
+#	#float y1,     # center of window in 1st img
+#	float x2, 
+#	float y2,     # center of window in 2nd img
+#	int width, 
+#	int height):  # size of window
+#
+#	cdef int hw = width/2
+#	cdef int hh = height/2
+#	cdef float g1, g2
+#	cdef int i, j
+#
+#	img2Patch = extractImagePatch(img2, x2, y2, height, width)
+#
+#	assert img1Patch.shape == img2Patch.shape
+#
+#	diffImg = img1Patch - img2Patch
+#	diffImg = diffImg.reshape((diffImg.shape[0] * diffImg.shape[1]))
+#
+#	return diffImg
 
 def _computeIntensityDifference(img1Patch,   # images 
 	np.ndarray[np.float32_t,ndim=2] img2,
@@ -55,16 +133,19 @@ def _computeIntensityDifference(img1Patch,   # images
 	cdef float g1, g2
 	cdef int i, j
 
-	img2Patch = extractImagePatch(img2, x2, y2, height, width)
+	imgdiff = []
+	#imgl1 = img1.load()
+	#imgl2 = img2.load()
 
-	assert img1Patch.shape == img2Patch.shape
-
-	diffImg = img1Patch - img2Patch
-	diffImg = diffImg.reshape((diffImg.shape[0] * diffImg.shape[1]))
-
-	return diffImg
-
-
+	# Compute values
+	for j in range(-hh, hh + 1):
+		for i in range(-hw, hw + 1):
+			#g1 = interpolate(x1+i, y1+j, img1Patch)
+			g1 = img1Patch[j + hh, i + hw]
+			g2 = interpolate(x2+i, y2+j, img2)
+			imgdiff.append(g1 - g2)
+	
+	return imgdiff
 
 #*********************************************************************
 #* _computeGradientSum
@@ -73,6 +154,28 @@ def _computeIntensityDifference(img1Patch,   # images
 #* aligns the gradients wrt the window and computes the sum of the two 
 #* overlaid gradients.
 #*
+
+#def _computeGradientSum(img1GradxPatch,  # gradient images
+#	np.ndarray[np.float32_t,ndim=2] gradx2,
+#	float x2, float y2,      # center of window in 2nd img
+#	int width, int height):   # size of window
+#
+#	cdef int hw = width/2
+#	cdef int hh = height/2
+#	cdef float g1, g2
+#	cdef int i, j
+#	gradx = []
+#
+#	#img2Patch = np.empty((height, width))
+#	#for j in range(-hh, hh + 1):
+#	#	for i in range(-hw, hw + 1):
+#	#		img2Patch[j+hh,i+hw] = interpolate(x2+i, y2+j, gradx2)
+#	img2Patch = extractImagePatch(gradx2, x2, y2, height, width)
+#
+#	sumImg = img1GradxPatch + img2Patch
+#	sumImg = sumImg.reshape((sumImg.shape[0] * sumImg.shape[1]))
+#
+#	return sumImg
 
 def _computeGradientSum(img1GradxPatch,  # gradient images
 	np.ndarray[np.float32_t,ndim=2] gradx2,
@@ -83,18 +186,17 @@ def _computeGradientSum(img1GradxPatch,  # gradient images
 	cdef int hh = height/2
 	cdef float g1, g2
 	cdef int i, j
-	gradx = []
+	gradx, grady = [], []
 
-	#img2Patch = np.empty((height, width))
-	#for j in range(-hh, hh + 1):
-	#	for i in range(-hw, hw + 1):
-	#		img2Patch[j+hh,i+hw] = interpolate(x2+i, y2+j, gradx2)
-	img2Patch = extractImagePatch(gradx2, x2, y2, height, width)
+	# Compute values
+	for j in range(-hh, hh + 1):
+		for i in range(-hw, hw + 1):
+			#g1 = interpolate(x1+i, y1+j, gradx1)
+			g1 = img1GradxPatch[j+hh, i+hw]
+			g2 = interpolate(x2+i, y2+j, gradx2)
+			gradx.append(g1 + g2)
 
-	sumImg = img1GradxPatch + img2Patch
-	sumImg = sumImg.reshape((sumImg.shape[0] * sumImg.shape[1]))
-
-	return sumImg
+	return gradx
 
 #*********************************************************************
 #* _computeIntensityDifferenceLightingInsensitive
