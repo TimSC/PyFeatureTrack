@@ -44,7 +44,7 @@ cdef float interpolate(float x, float y, np.ndarray[np.float32_t,ndim=2] img):
 
 #*********************************************************************
 
-def extractImagePatch(np.ndarray[np.float32_t,ndim=2] img, float x, float y, int height, int width):
+def extractImagePatchSlow(np.ndarray[np.float32_t,ndim=2] img, float x, float y, int height, int width):
 
 	patch = np.empty((height, width), np.float32)
 	extractImagePatchOptimised(img, x, y, patch)
