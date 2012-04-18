@@ -163,12 +163,14 @@ def _trackFeature(
 	if x2-hw < 0.0 or nc-(x2+hw) < one_plus_eps or y2-hh < 0.0 or nr-(y2+hh) < one_plus_eps:
 		status = kltState.KLT_OOB
 
+	workingPatch = np.empty((height, width), np.float32)
+
 	# Check whether residue is too large 
 	if status == kltState.KLT_TRACKED and max_residue is not None:
 		if lighting_insensitive:
-			imgdiff = trackFeaturesUtils._computeIntensityDifferenceLightingInsensitive(img1Patch, img2, x1, y1, x2, y2, width, height)
+			imgdiff = trackFeaturesUtils._computeIntensityDifferenceLightingInsensitive(img1Patch, img2, x1, y1, x2, y2, workingPatch)
 	  	else:
-			imgdiff = trackFeaturesUtils._computeIntensityDifference(img1Patch, img2, x2, y2, width, height)
+			imgdiff = trackFeaturesUtils._computeIntensityDifference(img1Patch, img2, x2, y2, workingPatch)
 
 		if np.abs(np.array(imgdiff)).sum()/(width*height) > max_residue:
 			status = kltState.KLT_LARGE_RESIDUE

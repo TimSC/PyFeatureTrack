@@ -71,15 +71,12 @@ def extractImagePatchOptimised(img2, x2, y2, out):
 
 def _computeIntensityDifference(img1Patch,   # images 
 	np.ndarray[np.float32_t,ndim=2] img2,
-	#float x1, 
-	#float y1,     # center of window in 1st img
 	float x2, 
 	float y2,     # center of window in 2nd img
-	int width, 
-	int height):  # size of window
+	workingPatch):  # temporary memory for patch storage, size determines window size
 
-	cdef int hw = width/2
-	cdef int hh = height/2
+	cdef int hw = workingPatch.shape[1]/2
+	cdef int hh = workingPatch.shape[0]/2
 	cdef float g1, g2
 	cdef int i, j
 
@@ -87,14 +84,13 @@ def _computeIntensityDifference(img1Patch,   # images
 	#imgl1 = img1.load()
 	#imgl2 = img2.load()
 
-	patch2 = np.empty((height, width), np.float32)
-	extractImagePatchOptimised(img2, x2, y2, patch2)
+	extractImagePatchOptimised(img2, x2, y2, workingPatch)
 
 	# Compute values
 	for j in range(-hh, hh + 1):
 		for i in range(-hw, hw + 1):
 			g1 = img1Patch[j + hh, i + hw]
-			g2 = patch2[j + hh, i + hw]
+			g2 = workingPatch[j + hh, i + hw]
 			imgdiff.append(g1 - g2)
 	
 	return imgdiff
@@ -110,23 +106,21 @@ def _computeIntensityDifference(img1Patch,   # images
 def _computeGradientSum(img1GradxPatch,  # gradient images
 	np.ndarray[np.float32_t,ndim=2] gradx2,
 	float x2, float y2,      # center of window in 2nd img
-	int width, int height):   # size of window
+	workingPatch):   # temporary memory for patch storage, size determines window size
 
-	cdef int hw = width/2
-	cdef int hh = height/2
+	cdef int hw = workingPatch.shape[1]/2
+	cdef int hh = workingPatch.shape[0]/2
 	cdef float g1, g2
 	cdef int i, j
 	gradx, grady = [], []
 
-	patch2 = np.empty((height, width), np.float32)
-	extractImagePatchOptimised(gradx2, x2, y2, patch2)
+	extractImagePatchOptimised(gradx2, x2, y2, workingPatch)
 
 	# Compute values
 	for j in range(-hh, hh + 1):
 		for i in range(-hw, hw + 1):
-			#g1 = interpolate(x1+i, y1+j, gradx1)
 			g1 = img1GradxPatch[j+hh, i+hw]
-			g2 = patch2[j+hh, i+hw]
+			g2 = workingPatch[j+hh, i+hw]
 			gradx.append(g1 + g2)
 
 	return gradx
@@ -308,25 +302,29 @@ def _solveEquation(gxx, gxy, gyy,
 def minFunc(xData, img1Patch, img1GradxPatch, img1GradyPatch, img2, width, height, tc, gradx2, grady2):
 	x2, y2 = xData
 
+	workingPatch = np.empty((height, width), np.float32)
+
 	#print img1, img2, x1, y1, width, height
 	if tc.lighting_insensitive:
 		raise Exception("Not implemented")
-		#imgdiff = _computeIntensityDifferenceLightingInsensitive(img1, img2, x1, y1, x2, y2, width, height)
+		#imgdiff = _computeIntensityDifferenceLightingInsensitive(img1, img2, x1, y1, x2, y2, workingPatch)
 	else:
-		imgdiff = _computeIntensityDifference(img1Patch, img2, x2, y2, width, height)
+		imgdiff = _computeIntensityDifference(img1Patch, img2, x2, y2, workingPatch)
 
 	#print "test", x2, y2, np.array(imgdiff).sum()
 	return imgdiff
 
 def jacobian(xData, img1Patch, img1GradxPatch, img1GradyPatch, img2, width, height, tc, gradx2, grady2):
 	x2, y2 = xData
+	workingPatch = np.empty((height, width), np.float32)
+
 	#print img1, img2, x1, y1, width, height
 	if tc.lighting_insensitive:
 		raise Exception("Not implemented")
-		#gradx, grady = _computeGradientSumLightingInsensitive(gradx1, grady1, gradx, grady2, img1, img2, x1, y1, x2, y2, width, height)
+		#gradx, grady = _computeGradientSumLightingInsensitive(gradx1, grady1, gradx, grady2, img1, img2, x1, y1, x2, y2, workingPatch)
 	else:
-		gradx = _computeGradientSum(img1GradxPatch, gradx2, x2, y2, width, height)
-		grady = _computeGradientSum(img1GradyPatch, grady2, x2, y2, width, height)
+		gradx = _computeGradientSum(img1GradxPatch, gradx2, x2, y2, workingPatch)
+		grady = _computeGradientSum(img1GradyPatch, grady2, x2, y2, workingPatch)
 	out = - np.array([gradx, grady]).transpose()
 	#print out.shape
 	
