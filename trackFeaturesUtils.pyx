@@ -22,7 +22,7 @@ def extractImagePatch(np.ndarray[np.float32_t,ndim=2] img, float x, float y, int
 	cdef float ay = y - yt
 	cdef np.ndarray[np.float32_t,ndim=2] kernel = np.zeros((3,3), np.float32)
 
-	workingArea = img[y-hh: y+hh+2, x-hw: x+hw+2]
+	workingArea = img[yt-hh: yt+hh+2, xt-hw: xt+hw+2]
 	
 	kernel[1,1] = (1.-ax) * (1.-ay)
 	kernel[0,0] = ax * ay
