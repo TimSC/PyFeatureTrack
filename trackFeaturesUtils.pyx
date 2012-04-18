@@ -1,6 +1,6 @@
 # cython: profile=True
 # cython: cdivision=True
-# cython: boundscheck=True
+# cython: boundscheck=False
 # cython: wraparound=False
 
 import numpy as np
@@ -17,9 +17,11 @@ def extractImagePatchSlow(np.ndarray[np.float32_t,ndim=2] img, float x, float y,
 	extractImagePatchOptimised(img, x, y, patch)
 	return patch
 
-def extractImagePatchOptimised(np.ndarray[np.float32_t,ndim=2] img, float x, float y, np.ndarray[np.float32_t,ndim=2] out):
+cdef extractImagePatchOptimised(np.ndarray[np.float32_t,ndim=2] img, float x, float y, np.ndarray[np.float32_t,ndim=2] out):
 
-	cdef int i, j, ix = int(x), iy = int(y)
+	cdef int i, j, vx, vy
+	cdef int ix = int(x)
+	cdef int iy = int(y)
 	cdef int patchCols = out.shape[1]
 	cdef int patchRows = out.shape[0]
 	cdef int hh = out.shape[0] / 2
@@ -35,7 +37,7 @@ def extractImagePatchOptimised(np.ndarray[np.float32_t,ndim=2] img, float x, flo
 	# Compute values
 	for j in range(patchCols):
 		for i in range(patchRows):
-			#val = interpolate(x+i-hw, y+j-hh, img)
+
 			vx = ix+i-hw
 			vy = iy+j-hh
 
@@ -45,6 +47,8 @@ def extractImagePatchOptimised(np.ndarray[np.float32_t,ndim=2] img, float x, flo
 				ax   *   ay   * img[vy+1,vx+1]
 
 			out[j,i] = val
+
+	i = 0
 
 #*********************************************************************
 #* _computeIntensityDifference
