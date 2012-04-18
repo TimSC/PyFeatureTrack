@@ -48,7 +48,7 @@ cdef extractImagePatchOptimised(np.ndarray[np.float32_t,ndim=2] img, float x, fl
 
 			out[j,i] = val
 
-	i = 0
+	i = 0 #All done, but this line makes cython profiling easier to read
 
 #*********************************************************************
 #* _computeIntensityDifference
@@ -58,11 +58,11 @@ cdef extractImagePatchOptimised(np.ndarray[np.float32_t,ndim=2] img, float x, fl
 #* between the two overlaid images.
 #*
 
-def _computeIntensityDifference(img1Patch,   # images 
+def _computeIntensityDifference(np.ndarray[np.float32_t,ndim=2] img1Patch,   # images 
 	np.ndarray[np.float32_t,ndim=2] img2,
 	float x2, 
 	float y2,     # center of window in 2nd img
-	workingPatch):  # temporary memory for patch storage, size determines window size
+	np.ndarray[np.float32_t,ndim=2] workingPatch):  # temporary memory for patch storage, size determines window size
 
 	cdef int hw = workingPatch.shape[1]/2
 	cdef int hh = workingPatch.shape[0]/2
@@ -92,10 +92,10 @@ def _computeIntensityDifference(img1Patch,   # images
 #* overlaid gradients.
 #*
 
-def _computeGradientSum(img1GradxPatch,  # gradient images
+def _computeGradientSum(np.ndarray[np.float32_t,ndim=2] img1GradxPatch,  # gradient images
 	np.ndarray[np.float32_t,ndim=2] gradx2,
 	float x2, float y2,      # center of window in 2nd img
-	workingPatch):   # temporary memory for patch storage, size determines window size
+	np.ndarray[np.float32_t,ndim=2] workingPatch):   # temporary memory for patch storage, size determines window size
 
 	cdef int hw = workingPatch.shape[1]/2
 	cdef int hh = workingPatch.shape[0]/2
