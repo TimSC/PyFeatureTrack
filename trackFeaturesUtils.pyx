@@ -111,8 +111,9 @@ def _computeGradientSum(np.ndarray[np.float32_t,ndim=2] img1GradxPatch,  # gradi
 			g1 = img1GradxPatch[j+hh, i+hw]
 			g2 = workingPatch[j+hh, i+hw]
 			gradx.append(g1 + g2)
+			workingPatch[j+hh, i+hw] = g1 + g2
 
-	return gradx
+	return np.array(gradx, np.float32)
 
 #*********************************************************************
 #* _computeIntensityDifferenceLightingInsensitive
@@ -301,19 +302,39 @@ def minFunc(xData, img1Patch, img1GradxPatch, img1GradyPatch, img2, workingPatch
 	#print "test", x2, y2, np.array(imgdiff).sum()
 	return imgdiff
 
-def jacobian(xData, img1Patch, img1GradxPatch, img1GradyPatch, img2, workingPatch, tc, gradx2, grady2):
-	x2, y2 = xData
+def jacobian(xData, np.ndarray[np.float32_t,ndim=2] img1Patch, 
+	np.ndarray[np.float32_t,ndim=2] img1GradxPatch, 
+	np.ndarray[np.float32_t,ndim=2] img1GradyPatch, 
+	np.ndarray[np.float32_t,ndim=2] img2, 
+	np.ndarray[np.float32_t,ndim=2] workingPatch, 
+	tc, 
+	np.ndarray[np.float32_t,ndim=2] gradx2, 
+	np.ndarray[np.float32_t,ndim=2] grady2):
+
+	cdef np.ndarray[np.float32_t,ndim=1] gradx, grady
+
+	cdef float x2 = xData[0]
+	cdef float y2 = xData[1]
+	gradxImg = np.empty((workingPatch.shape[0],workingPatch.shape[1]), np.float32)
+	gradyImg = np.empty((workingPatch.shape[0],workingPatch.shape[1]), np.float32)
 
 	#print img1, img2, x1, y1, width, height
 	if tc.lighting_insensitive:
 		raise Exception("Not implemented")
 		#gradx, grady = _computeGradientSumLightingInsensitive(gradx1, grady1, gradx, grady2, img1, img2, x1, y1, x2, y2, workingPatch)
 	else:
-		gradx = _computeGradientSum(img1GradxPatch, gradx2, x2, y2, workingPatch)
-		grady = _computeGradientSum(img1GradyPatch, grady2, x2, y2, workingPatch)
-	out = - np.array([gradx, grady]).transpose()
-	#print out.shape
+		gradx = _computeGradientSum(img1GradxPatch, gradx2, x2, y2, gradxImg)
+		grady = _computeGradientSum(img1GradyPatch, grady2, x2, y2, gradyImg)
+
+	gradxImgReshaped = gradxImg.reshape((gradxImg.size, 1))
+	gradyImgReshaped = gradyImg.reshape((gradyImg.size, 1))
 	
-	return out
+	out2 = - np.hstack((gradxImgReshaped,gradyImgReshaped))
+	
+	out = - np.array([gradx, grady]).transpose()
+	#print out.shape, out2.shape
+	#print out, out2
+	
+	return out2
 
 
