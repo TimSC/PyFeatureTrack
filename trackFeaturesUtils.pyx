@@ -311,7 +311,7 @@ def jacobian(xData, np.ndarray[np.float32_t,ndim=2] img1Patch,
 	np.ndarray[np.float32_t,ndim=2] gradx2, 
 	np.ndarray[np.float32_t,ndim=2] grady2):
 
-	cdef np.ndarray[np.float32_t,ndim=1] gradx, grady
+	#cdef np.ndarray[np.float32_t,ndim=1] gradx, grady
 
 	cdef float x2 = xData[0]
 	cdef float y2 = xData[1]
@@ -331,7 +331,7 @@ def jacobian(xData, np.ndarray[np.float32_t,ndim=2] img1Patch,
 	
 	out2 = - np.hstack((gradxImgReshaped,gradyImgReshaped))
 	
-	out = - np.array([gradx, grady]).transpose()
+	#out = - np.array([gradx, grady]).transpose()
 	#print out.shape, out2.shape
 	#print out, out2
 	
