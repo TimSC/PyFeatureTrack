@@ -31,13 +31,13 @@ def trackFeatureIterateSciPy(x2, y2, img1GradxPatch, img1GradyPatch, img1Patch, 
 	nc = img2.shape[1]
 	nr = img2.shape[0]
 
-
+	workingPatch = np.empty((height, width), np.float32)
 
 	with warnings.catch_warnings():
 		warnings.simplefilter("ignore") #Surpress warnings about max iterations
 
 		soln = scipy.optimize.leastsq(func=trackFeaturesUtils.minFunc, 
-			x0=(x2, y2), args=(img1Patch, img1GradxPatch, img1GradyPatch, img2, width, height, tc, gradx2, grady2), 
+			x0=(x2, y2), args=(img1Patch, img1GradxPatch, img1GradyPatch, img2, workingPatch, tc, gradx2, grady2), 
 			Dfun=trackFeaturesUtils.jacobian,factor=step_factor,maxfev=max_iterations)
 	status = kltState.KLT_TRACKED
 	x2 = soln[0][0]
@@ -68,6 +68,7 @@ def trackFeatureIterateCKLT(x2, y2, img1GradxPatch, img1GradyPatch, img1Patch, i
 	hh = height/2
 	nc = img2.shape[1]
 	nr = img2.shape[0]
+	workingPatch = np.empty((height, width), np.float32)
 
 	# Iteratively update the window position 
 	while True:
@@ -81,13 +82,13 @@ def trackFeatureIterateCKLT(x2, y2, img1GradxPatch, img1GradyPatch, img1Patch, i
 		# Compute gradient and difference windows 
 		if lighting_insensitive:
 			raise Exception("Not implemented")
-			#imgdiff = trackFeaturesUtils._computeIntensityDifferenceLightingInsensitive(img1Patch, img2, x2, y2, width, height)
-			#gradx, grady = trackFeaturesUtils._computeGradientSumLightingInsensitive(gradx1, grady1, gradx, grady2, img1, img2, x1, y1, x2, y2, width, height)
+			#imgdiff = trackFeaturesUtils._computeIntensityDifferenceLightingInsensitive(img1Patch, img2, x2, y2, workingPatch)
+			#gradx, grady = trackFeaturesUtils._computeGradientSumLightingInsensitive(gradx1, grady1, gradx, grady2, img1, img2, x1, y1, x2, y2, workingPatch)
 		else:
-			imgdiff = trackFeaturesUtils._computeIntensityDifference(img1Patch, img2, x2, y2, width, height)
+			imgdiff = trackFeaturesUtils._computeIntensityDifference(img1Patch, img2, x2, y2, workingPatch)
 
-			gradx = trackFeaturesUtils._computeGradientSum(img1GradxPatch, gradx2, x2, y2, width, height)
-			grady = trackFeaturesUtils._computeGradientSum(img1GradyPatch, grady2, x2, y2, width, height)
+			gradx = trackFeaturesUtils._computeGradientSum(img1GradxPatch, gradx2, x2, y2, workingPatch)
+			grady = trackFeaturesUtils._computeGradientSum(img1GradyPatch, grady2, x2, y2, workingPatch)
 
 		# Use these windows to construct matrices 
 		gxx, gxy, gyy = trackFeaturesUtils._compute2by2GradientMatrix(gradx, grady, width, height)

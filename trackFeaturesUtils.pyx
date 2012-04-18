@@ -299,10 +299,8 @@ def _solveEquation(gxx, gxy, gyy,
 	dy = (gxx*ey - gxy*ex)/det
 	return kltState.KLT_TRACKED, dx, dy
 
-def minFunc(xData, img1Patch, img1GradxPatch, img1GradyPatch, img2, width, height, tc, gradx2, grady2):
+def minFunc(xData, img1Patch, img1GradxPatch, img1GradyPatch, img2, workingPatch, tc, gradx2, grady2):
 	x2, y2 = xData
-
-	workingPatch = np.empty((height, width), np.float32)
 
 	#print img1, img2, x1, y1, width, height
 	if tc.lighting_insensitive:
@@ -314,9 +312,8 @@ def minFunc(xData, img1Patch, img1GradxPatch, img1GradyPatch, img2, width, heigh
 	#print "test", x2, y2, np.array(imgdiff).sum()
 	return imgdiff
 
-def jacobian(xData, img1Patch, img1GradxPatch, img1GradyPatch, img2, width, height, tc, gradx2, grady2):
+def jacobian(xData, img1Patch, img1GradxPatch, img1GradyPatch, img2, workingPatch, tc, gradx2, grady2):
 	x2, y2 = xData
-	workingPatch = np.empty((height, width), np.float32)
 
 	#print img1, img2, x1, y1, width, height
 	if tc.lighting_insensitive:
