@@ -235,6 +235,17 @@ def ComputeImagePyramids(tc, img1, img2):
 	for i in range(tc.nPyramidLevels):
 		pyramid2_gradx.img[i], pyramid2_grady.img[i] = KLTComputeGradients(pyramid2.img[i], tc.grad_sigma)
 
+	# Write internal images 
+	if tc.writeInternalImages:
+		#char fname[80];
+		for i in range(tc.nPyramidLevels):
+			KLTWriteFloatImageToPGM(pyramid1.img[i],"kltimg_tf_i{0}.pgm".format(i))
+			KLTWriteFloatImageToPGM(pyramid1_gradx.img[i],"kltimg_tf_i{0}_gx.pgm".format(i))
+			KLTWriteFloatImageToPGM(pyramid1_grady.img[i],"kltimg_tf_i{0}_gy.pgm".format(i))
+			KLTWriteFloatImageToPGM(pyramid2.img[i],"kltimg_tf_j{0}.pgm".format(i))
+			KLTWriteFloatImageToPGM(pyramid2_gradx.img[i],"kltimg_tf_j{0}_gx.pgm".format(i))
+			KLTWriteFloatImageToPGM(pyramid2_grady.img[i],"kltimg_tf_j{0}_gy.pgm".format(i))
+
 	return pyramid1, pyramid1_gradx, pyramid1_grady, pyramid2, pyramid2_gradx, pyramid2_grady
 
 
@@ -287,17 +298,6 @@ def KLTTrackFeatures(tc, img1, img2, featurelist):
 
 	pyramid1, pyramid1_gradx, pyramid1_grady, \
 		pyramid2, pyramid2_gradx, pyramid2_grady = ComputeImagePyramids(tc, img1, img2)
-
-	# Write internal images 
-	if tc.writeInternalImages:
-		#char fname[80];
-		for i in range(tc.nPyramidLevels):
-			KLTWriteFloatImageToPGM(pyramid1.img[i],"kltimg_tf_i{0}.pgm".format(i))
-			KLTWriteFloatImageToPGM(pyramid1_gradx.img[i],"kltimg_tf_i{0}_gx.pgm".format(i))
-			KLTWriteFloatImageToPGM(pyramid1_grady.img[i],"kltimg_tf_i{0}_gy.pgm".format(i))
-			KLTWriteFloatImageToPGM(pyramid2.img[i],"kltimg_tf_j{0}.pgm".format(i))
-			KLTWriteFloatImageToPGM(pyramid2_gradx.img[i],"kltimg_tf_j{0}_gx.pgm".format(i))
-			KLTWriteFloatImageToPGM(pyramid2_grady.img[i],"kltimg_tf_j{0}_gy.pgm".format(i))
 		
 	# For each feature, do ... 
 	for indx, feat in enumerate(featurelist):
