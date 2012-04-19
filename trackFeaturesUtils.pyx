@@ -243,7 +243,7 @@ def computeGradientSum(np.ndarray[np.float32_t,ndim=2] img1GradxPatch,  # gradie
 #*
 #*
 
-def _compute2by1ErrorVector(np.ndarray[np.float32_t,ndim=1] imgdiff,
+cdef _compute2by1ErrorVector(np.ndarray[np.float32_t,ndim=1] imgdiff,
 	np.ndarray[np.float32_t,ndim=1] gradx,
 	np.ndarray[np.float32_t,ndim=1] grady,
 	int width, # size of window
@@ -273,7 +273,7 @@ def _compute2by1ErrorVector(np.ndarray[np.float32_t,ndim=1] imgdiff,
 #*
 #*
 
-def _compute2by2GradientMatrix(np.ndarray[np.float32_t,ndim=1] gradx, 
+cdef _compute2by2GradientMatrix(np.ndarray[np.float32_t,ndim=1] gradx, 
 	np.ndarray[np.float32_t,ndim=1] grady,
 	int width,   # size of window
 	int height):
@@ -306,7 +306,7 @@ def _compute2by2GradientMatrix(np.ndarray[np.float32_t,ndim=1] gradx,
 #* Returns KLT_TRACKED on success and KLT_SMALL_DET on failure
 #*
 
-def _solveEquation(float gxx, float gxy, float gyy,
+cdef _solveEquation(float gxx, float gxy, float gyy,
 	float ex, float ey,
 	float small):
 
@@ -366,4 +366,74 @@ def jacobian(np.ndarray[double,ndim=1] xData,
 		_computeGradientSum(img1GradyPatch, grady2, x2, y2, workingPatch, jacobianMem, 1)
 
 	return jacobianMem
+
+
+#*********************************************************************
+
+def trackFeatureIterateCKLT(float x2, 
+	float y2, 
+	np.ndarray[np.float32_t,ndim=2] img1GradxPatch, 
+	np.ndarray[np.float32_t,ndim=2] img1GradyPatch, 
+	np.ndarray[np.float32_t,ndim=2] img1Patch, 
+	np.ndarray[np.float32_t,ndim=2] img2, 
+	np.ndarray[np.float32_t,ndim=2] gradx2, 
+	np.ndarray[np.float32_t,ndim=2] grady2, 
+	tc):
+
+	cdef int width = tc.window_width # size of window
+	cdef int height = tc.window_height 
+	cdef int lighting_insensitive = tc.lighting_insensitive # whether to normalize for gain and bias 
+	cdef float step_factor = tc.step_factor # 2.0 comes from equations, 1.0 seems to avoid overshooting
+	cdef float small = tc.min_determinant # determinant threshold for declaring KLT_SMALL_DET 
+	cdef float th = tc.min_displacement # displacement threshold for stopping             
+	cdef int max_iterations = tc.max_iterations 
+
+	cdef int iteration = 0
+	cdef float one_plus_eps = 1.001   # To prevent rounding errors 
+	cdef int hw = width/2
+	cdef int hh = height/2
+	cdef int nc = img2.shape[1]
+	cdef int nr = img2.shape[0]
+	cdef np.ndarray[np.float32_t,ndim=2] workingPatch = np.empty((height, width), np.float32)
+	cdef np.ndarray[np.float32_t,ndim=1] imgdiff = np.zeros((workingPatch.size), np.float32)
+	cdef np.ndarray[np.float32_t,ndim=2] jacobianMem = np.zeros((workingPatch.size,2), np.float32)
+
+	# Iteratively update the window position 
+	while True:
+
+		# If out of bounds, exit loop 
+		if x2-hw < 0. or nc-(x2+hw) < one_plus_eps or \
+			y2-hh < 0. or nr-(y2+hh) < one_plus_eps:
+			status = kltState.KLT_OOB
+			break
+
+		# Compute gradient and difference windows 
+		if lighting_insensitive:
+			raise Exception("Not implemented")
+			#imgdiff = _computeIntensityDifferenceLightingInsensitive(img1Patch, img2, x2, y2, workingPatch)
+			#gradx, grady = computeGradientSumLightingInsensitive(gradx1, grady1, gradx, grady2, img1, img2, x1, y1, x2, y2, workingPatch)
+		else:
+			_computeIntensityDifference(img1Patch, img2, x2, y2, workingPatch, imgdiff)
+
+			_computeGradientSum(img1GradxPatch, gradx2, x2, y2, workingPatch, jacobianMem, 0)
+			_computeGradientSum(img1GradyPatch, grady2, x2, y2, workingPatch, jacobianMem, 1)
+
+			gradx = - jacobianMem[:,0]
+			grady = - jacobianMem[:,1]
+
+		# Use these windows to construct matrices 
+		gxx, gxy, gyy = _compute2by2GradientMatrix(gradx, grady, width, height)
+		ex, ey = _compute2by1ErrorVector(imgdiff, gradx, grady, width, height, step_factor)
+
+		# Using matrices, solve equation for new displacement */
+		status, dx, dy = _solveEquation(gxx, gxy, gyy, ex, ey, small)
+		if status == kltState.KLT_SMALL_DET: break
+
+		x2 += dx
+		y2 += dy
+		iteration += 1
+
+		if not ((abs(dx)>=th or abs(dy)>=th) and iteration < max_iterations): break
+
+	return x2, y2, status, iteration
 
