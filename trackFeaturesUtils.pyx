@@ -32,7 +32,7 @@ cdef extractImagePatchOptimised(np.ndarray[np.float32_t,ndim=2] img, float x, fl
 	cdef int ncols = img.shape[1]
 	cdef int nrows = img.shape[0]
 
-	assert ix - hw >= 0 and iy - hh >= 0 and ix + hw + 1 <= ncols - 2 and iy + hh + 1 <= nrows - 2
+	assert ix - hw >= 0 and iy - hh >= 0 and ix + hw + 2 <= ncols and iy + hh + 2 <= nrows
 
 	# Compute values
 	for j in range(patchCols):
