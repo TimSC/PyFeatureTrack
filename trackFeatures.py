@@ -239,10 +239,6 @@ def KLTTrackFeatures(tc, img1, img2, featurelist):
 		tc.window_height = 3
 		KLTWarning("Tracking context's window height must be at least three.  \n" + \
 			"Changing to {0}.".format(tc.window_height))
-	
-
-	# Create temporary image 
-	tmpimg = Image.new("F", img1.size)
 
 	# Process first image by converting to float, smoothing, computing 
 	# pyramid, and computing gradient pyramids 
