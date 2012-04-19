@@ -96,7 +96,8 @@ def _computeGradientSum(np.ndarray[np.float32_t,ndim=2] img1GradxPatch,  # gradi
 	np.ndarray[np.float32_t,ndim=2] gradx2,
 	float x2, float y2,      # center of window in 2nd img
 	np.ndarray[np.float32_t,ndim=2] workingPatch, # temporary memory for patch storage, size determines window size
-	np.ndarray[np.float32_t,ndim=1] out): 
+	np.ndarray[np.float32_t,ndim=2] out,
+	int row): 
 
 	cdef int hw = workingPatch.shape[1]/2
 	cdef int hh = workingPatch.shape[0]/2
@@ -112,7 +113,7 @@ def _computeGradientSum(np.ndarray[np.float32_t,ndim=2] img1GradxPatch,  # gradi
 			g1 = img1GradxPatch[j, i]
 			g2 = workingPatch[j, i]
 
-			out[j*workingPatch.shape[0] + i] = g1 + g2
+			out[j*workingPatch.shape[0] + i, row] = g1 + g2
 
 #*********************************************************************
 #* _computeIntensityDifferenceLightingInsensitive
@@ -321,8 +322,8 @@ def jacobian(xData, np.ndarray[np.float32_t,ndim=2] img1Patch,
 		raise Exception("Not implemented")
 		#gradx, grady = _computeGradientSumLightingInsensitive(gradx1, grady1, gradx, grady2, img1, img2, x1, y1, x2, y2, workingPatch)
 	else:
-		_computeGradientSum(img1GradxPatch, gradx2, x2, y2, workingPatch, out[:,0])
-		_computeGradientSum(img1GradyPatch, grady2, x2, y2, workingPatch, out[:,1])
+		_computeGradientSum(img1GradxPatch, gradx2, x2, y2, workingPatch, out, 0)
+		_computeGradientSum(img1GradyPatch, grady2, x2, y2, workingPatch, out, 1)
 
 	return -out
 
