@@ -136,6 +136,7 @@ class TrackingProcess:
 		currentFrame = None
 		tc = klt.KLT_TrackingContext()
 		tc.sequentialMode = True
+		tc.min_determinant = 0.
 		fl = []
 		prevImg = None
 
