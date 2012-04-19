@@ -244,11 +244,13 @@ def computeGradientSum(np.ndarray[np.float32_t,ndim=2] img1GradxPatch,  # gradie
 #*
 
 cdef _compute2by1ErrorVector(np.ndarray[np.float32_t,ndim=1] imgdiff,
-	np.ndarray[np.float32_t,ndim=1] gradx,
-	np.ndarray[np.float32_t,ndim=1] grady,
+	np.ndarray[np.float32_t,ndim=2] jacobian,
 	int width, # size of window
 	int height,
 	float step_factor): # 2.0 comes from equations, 1.0 seems to avoid overshooting
+
+	#cdef np.ndarray[np.float32_t,ndim=1] gradx = - jacobian[:,0]
+	#cdef np.ndarray[np.float32_t,ndim=1] grady = - jacobian[:,1]
 
 	# Compute values
 	cdef float ex = 0.
@@ -259,8 +261,8 @@ cdef _compute2by1ErrorVector(np.ndarray[np.float32_t,ndim=1] imgdiff,
 
 	for i in range(width * height):
 		diff = imgdiff[ind]
-		ex += diff * gradx[ind]
-		ey += diff * grady[ind]
+		ex += - diff * jacobian[ind,0]
+		ey += - diff * jacobian[ind,1]
 		ind += 1
 
 	ex *= step_factor
@@ -273,10 +275,12 @@ cdef _compute2by1ErrorVector(np.ndarray[np.float32_t,ndim=1] imgdiff,
 #*
 #*
 
-cdef _compute2by2GradientMatrix(np.ndarray[np.float32_t,ndim=1] gradx, 
-	np.ndarray[np.float32_t,ndim=1] grady,
+cdef _compute2by2GradientMatrix(np.ndarray[np.float32_t,ndim=2] jacobian,
 	int width,   # size of window
 	int height):
+
+	#cdef np.ndarray[np.float32_t,ndim=1] gradx = - jacobian[:,0]
+	#cdef np.ndarray[np.float32_t,ndim=1] grady = - jacobian[:,1]
 
 	# Compute values 
 	cdef float gx, gy
@@ -286,8 +290,8 @@ cdef _compute2by2GradientMatrix(np.ndarray[np.float32_t,ndim=1] gradx,
 	cdef int ind = 0, i
 
 	for i in range(width * height):
-		gx = gradx[ind]
-		gy = grady[ind]
+		gx = - jacobian[ind,0]
+		gy = - jacobian[ind,1]
 		gxx += gx*gx;
 		gxy += gx*gy;
 		gyy += gy*gy;
@@ -396,7 +400,8 @@ def trackFeatureIterateCKLT(float x2,
 	cdef int nr = img2.shape[0]
 	cdef np.ndarray[np.float32_t,ndim=2] workingPatch = np.empty((height, width), np.float32)
 	cdef np.ndarray[np.float32_t,ndim=1] imgdiff = np.zeros((workingPatch.size), np.float32)
-	cdef np.ndarray[np.float32_t,ndim=2] jacobianMem = np.zeros((workingPatch.size,2), np.float32)
+	cdef np.ndarray[np.float32_t,ndim=2] jacobian = np.zeros((workingPatch.size,2), np.float32)
+	cdef float gxx, gxy, gyy, ex, ey, dx, dy
 
 	# Iteratively update the window position 
 	while True:
@@ -415,15 +420,15 @@ def trackFeatureIterateCKLT(float x2,
 		else:
 			_computeIntensityDifference(img1Patch, img2, x2, y2, workingPatch, imgdiff)
 
-			_computeGradientSum(img1GradxPatch, gradx2, x2, y2, workingPatch, jacobianMem, 0)
-			_computeGradientSum(img1GradyPatch, grady2, x2, y2, workingPatch, jacobianMem, 1)
+			_computeGradientSum(img1GradxPatch, gradx2, x2, y2, workingPatch, jacobian, 0)
+			_computeGradientSum(img1GradyPatch, grady2, x2, y2, workingPatch, jacobian, 1)
 
-			gradx = - jacobianMem[:,0]
-			grady = - jacobianMem[:,1]
+			#gradx = - jacobian[:,0]
+			#grady = - jacobian[:,1]
 
 		# Use these windows to construct matrices 
-		gxx, gxy, gyy = _compute2by2GradientMatrix(gradx, grady, width, height)
-		ex, ey = _compute2by1ErrorVector(imgdiff, gradx, grady, width, height, step_factor)
+		gxx, gxy, gyy = _compute2by2GradientMatrix(jacobian, width, height)
+		ex, ey = _compute2by1ErrorVector(imgdiff, jacobian, width, height, step_factor)
 
 		# Using matrices, solve equation for new displacement */
 		status, dx, dy = _solveEquation(gxx, gxy, gyy, ex, ey, small)
