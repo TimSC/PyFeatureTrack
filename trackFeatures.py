@@ -71,6 +71,7 @@ def trackFeatureIterateCKLT(x2, y2, img1GradxPatch, img1GradyPatch, img1Patch, i
 	nc = img2.shape[1]
 	nr = img2.shape[0]
 	workingPatch = np.empty((height, width), np.float32)
+	jacobianMem = np.zeros((workingPatch.size,2), np.float32)
 
 	# Iteratively update the window position 
 	while True:
@@ -85,15 +86,15 @@ def trackFeatureIterateCKLT(x2, y2, img1GradxPatch, img1GradyPatch, img1Patch, i
 		if lighting_insensitive:
 			raise Exception("Not implemented")
 			#imgdiff = trackFeaturesUtils._computeIntensityDifferenceLightingInsensitive(img1Patch, img2, x2, y2, workingPatch)
-			#gradx, grady = trackFeaturesUtils._computeGradientSumLightingInsensitive(gradx1, grady1, gradx, grady2, img1, img2, x1, y1, x2, y2, workingPatch)
+			#gradx, grady = trackFeaturesUtils.computeGradientSumLightingInsensitive(gradx1, grady1, gradx, grady2, img1, img2, x1, y1, x2, y2, workingPatch)
 		else:
 			imgdiff = trackFeaturesUtils.computeIntensityDifference(img1Patch, img2, x2, y2, workingPatch)
 
-			trackFeaturesUtils._computeGradientSum(img1GradxPatch, gradx2, x2, y2, gradx, 0)
-			trackFeaturesUtils._computeGradientSum(img1GradyPatch, grady2, x2, y2, grady, 0)
+			trackFeaturesUtils.computeGradientSum(img1GradxPatch, gradx2, x2, y2, workingPatch, jacobianMem, 0)
+			trackFeaturesUtils.computeGradientSum(img1GradyPatch, grady2, x2, y2, workingPatch, jacobianMem, 1)
 
-			gradx = - gradx
-			grady = - grady
+			gradx = - jacobianMem[:,0]
+			grady = - jacobianMem[:,1]
 
 		# Use these windows to construct matrices 
 		gxx, gxy, gyy = trackFeaturesUtils._compute2by2GradientMatrix(gradx, grady, width, height)

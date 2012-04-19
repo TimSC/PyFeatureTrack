@@ -122,6 +122,20 @@ cdef _computeGradientSum(np.ndarray[np.float32_t,ndim=2] img1GradxPatch,  # grad
 
 			out[j*workingPatch.shape[0] + i, row] = - g1 - g2
 
+def computeGradientSum(np.ndarray[np.float32_t,ndim=2] img1GradxPatch,  # gradient images
+	np.ndarray[np.float32_t,ndim=2] gradx2,
+	float x2, float y2,      # center of window in 2nd img
+	np.ndarray[np.float32_t,ndim=2] workingPatch, # temporary memory for patch storage, size determines window size
+	np.ndarray[np.float32_t,ndim=2] out,
+	int row):
+
+	return _computeGradientSum(img1GradxPatch,
+		gradx2,
+		x2, y2,
+		workingPatch,
+		out,
+		row)
+
 #*********************************************************************
 #* _computeIntensityDifferenceLightingInsensitive
 #*
