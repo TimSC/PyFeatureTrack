@@ -62,15 +62,15 @@ cdef _computeIntensityDifference(np.ndarray[np.float32_t,ndim=2] img1Patch,   # 
 	np.ndarray[np.float32_t,ndim=2] img2,
 	float x2, 
 	float y2,     # center of window in 2nd img
-	np.ndarray[np.float32_t,ndim=2] workingPatch # temporary memory for patch storage, size determines window size
-	):  
+	np.ndarray[np.float32_t,ndim=2] workingPatch, # temporary memory for patch storage, size determines window size
+	np.ndarray[np.float32_t,ndim=1] out):
 
 	cdef int hw = workingPatch.shape[1]/2
 	cdef int hh = workingPatch.shape[0]/2
 	cdef float g1, g2
-	cdef int i, j
+	cdef int i, j, ind = 0
 
-	imgdiff = []
+	#imgdiff = []
 	#imgl1 = img1.load()
 	#imgl2 = img2.load()
 
@@ -81,16 +81,20 @@ cdef _computeIntensityDifference(np.ndarray[np.float32_t,ndim=2] img1Patch,   # 
 		for i in range(-hw, hw + 1):
 			g1 = img1Patch[j + hh, i + hw]
 			g2 = workingPatch[j + hh, i + hw]
-			imgdiff.append(g1 - g2)
-	
-	return np.array(imgdiff,np.float32)
+			#imgdiff.append(g1 - g2)
+			out[ind] = g1 - g2
+			ind += 1
+
+	return None
 
 def computeIntensityDifference(np.ndarray[np.float32_t,ndim=2] img1Patch,   # images 
 	np.ndarray[np.float32_t,ndim=2] img2,
 	float x2, 
 	float y2,     # center of window in 2nd img
-	np.ndarray[np.float32_t,ndim=2] workingPatch): # temporary memory for patch storage, size determines window size
-	return _computeIntensityDifference(img1Patch, img2, x2, y2, workingPatch)
+	np.ndarray[np.float32_t,ndim=2] workingPatch,
+	np.ndarray[np.float32_t,ndim=1] out): # temporary memory for patch storage, size determines window size
+
+	return _computeIntensityDifference(img1Patch, img2, x2, y2, workingPatch, out)
 
 #*********************************************************************
 #* _computeGradientSum
@@ -334,10 +338,10 @@ def minFunc(np.ndarray[double,ndim=1] xData,
 		raise Exception("Not implemented")
 		#imgdiff = _computeIntensityDifferenceLightingInsensitive(img1, img2, x1, y1, x2, y2, workingPatch)
 	else:
-		imgdiff = _computeIntensityDifference(img1Patch, img2, x2, y2, workingPatch)
+		_computeIntensityDifference(img1Patch, img2, x2, y2, workingPatch, jacobianMem[:,0])
 
 	#print "test", x2, y2, np.array(imgdiff).sum()
-	return imgdiff
+	return jacobianMem[:,0]
 
 def jacobian(np.ndarray[double,ndim=1] xData, 
 	np.ndarray[np.float32_t,ndim=2] img1Patch, 

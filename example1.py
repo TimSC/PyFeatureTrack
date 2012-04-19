@@ -11,7 +11,7 @@ from PIL import Image
 from selectGoodFeatures import *
 from writeFeatures import *
 from trackFeatures import *
-import pickle
+import pickle, time
 
 def main():
 	tc = KLT_TrackingContext()
@@ -47,9 +47,13 @@ def main():
 	#fl = pickle.load(open("featurelist.dat"))
 
 	#KLTTrackFeatures(tc, img1, img2, fl)
-	for i in range(10):
+	count = 0
+	ti = time.clock()
+	for i in range(100):
 		KLTTrackFeatures(tc, img1, img2, fl)
 		KLTTrackFeatures(tc, img2, img1, fl)
+		count += 2
+	print (time.clock() - ti) / count
 
 	print "\nIn second image:"
 	for i, feat in enumerate(fl):

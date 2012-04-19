@@ -71,6 +71,7 @@ def trackFeatureIterateCKLT(x2, y2, img1GradxPatch, img1GradyPatch, img1Patch, i
 	nc = img2.shape[1]
 	nr = img2.shape[0]
 	workingPatch = np.empty((height, width), np.float32)
+	imgdiff = np.zeros((workingPatch.size), np.float32)
 	jacobianMem = np.zeros((workingPatch.size,2), np.float32)
 
 	# Iteratively update the window position 
@@ -88,7 +89,7 @@ def trackFeatureIterateCKLT(x2, y2, img1GradxPatch, img1GradyPatch, img1Patch, i
 			#imgdiff = trackFeaturesUtils._computeIntensityDifferenceLightingInsensitive(img1Patch, img2, x2, y2, workingPatch)
 			#gradx, grady = trackFeaturesUtils.computeGradientSumLightingInsensitive(gradx1, grady1, gradx, grady2, img1, img2, x1, y1, x2, y2, workingPatch)
 		else:
-			imgdiff = trackFeaturesUtils.computeIntensityDifference(img1Patch, img2, x2, y2, workingPatch)
+			trackFeaturesUtils.computeIntensityDifference(img1Patch, img2, x2, y2, workingPatch, imgdiff)
 
 			trackFeaturesUtils.computeGradientSum(img1GradxPatch, gradx2, x2, y2, workingPatch, jacobianMem, 0)
 			trackFeaturesUtils.computeGradientSum(img1GradyPatch, grady2, x2, y2, workingPatch, jacobianMem, 1)
@@ -173,11 +174,13 @@ def _trackFeature(
 	workingPatch = np.empty((height, width), np.float32)
 
 	# Check whether residue is too large 
+	imgdiff = np.zeros((workingPatch.size), np.float32)
+
 	if status == kltState.KLT_TRACKED and max_residue is not None:
 		if lighting_insensitive:
-			imgdiff = trackFeaturesUtils.computeIntensityDifferenceLightingInsensitive(img1Patch, img2, x1, y1, x2, y2, workingPatch)
+			trackFeaturesUtils.computeIntensityDifferenceLightingInsensitive(img1Patch, img2, x1, y1, x2, y2, workingPatch, imgdiff)
 	  	else:
-			imgdiff = trackFeaturesUtils.computeIntensityDifference(img1Patch, img2, x2, y2, workingPatch)
+			trackFeaturesUtils.computeIntensityDifference(img1Patch, img2, x2, y2, workingPatch, imgdiff)
 
 		if np.abs(np.array(imgdiff)).sum()/(width*height) > max_residue:
 			status = kltState.KLT_LARGE_RESIDUE
