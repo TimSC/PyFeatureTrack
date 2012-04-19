@@ -162,8 +162,7 @@ class TrackingProcess:
 					fl = selectGoodFeatures.KLTSelectGoodFeatures(tc, currentFrame, nFeatures)
 				else:
 					trackFeatures.KLTTrackFeatures(tc, prevImg, currentFrame, fl)
-				for feat in fl:
-					print feat.val
+
 				fromWorker.put(("TRACKING",fl))
 				prevImg = currentFrame
 				currentFrame = None
