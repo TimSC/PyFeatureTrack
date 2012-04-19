@@ -62,7 +62,8 @@ cdef _computeIntensityDifference(np.ndarray[np.float32_t,ndim=2] img1Patch,   # 
 	np.ndarray[np.float32_t,ndim=2] img2,
 	float x2, 
 	float y2,     # center of window in 2nd img
-	np.ndarray[np.float32_t,ndim=2] workingPatch):  # temporary memory for patch storage, size determines window size
+	np.ndarray[np.float32_t,ndim=2] workingPatch # temporary memory for patch storage, size determines window size
+	):  
 
 	cdef int hw = workingPatch.shape[1]/2
 	cdef int hh = workingPatch.shape[0]/2
@@ -82,7 +83,7 @@ cdef _computeIntensityDifference(np.ndarray[np.float32_t,ndim=2] img1Patch,   # 
 			g2 = workingPatch[j + hh, i + hw]
 			imgdiff.append(g1 - g2)
 	
-	return imgdiff
+	return np.array(imgdiff,np.float32)
 
 def computeIntensityDifference(np.ndarray[np.float32_t,ndim=2] img1Patch,   # images 
 	np.ndarray[np.float32_t,ndim=2] img2,
@@ -238,17 +239,20 @@ def computeGradientSum(np.ndarray[np.float32_t,ndim=2] img1GradxPatch,  # gradie
 #*
 #*
 
-def _compute2by1ErrorVector(imgdiff,
-	gradx,
-	grady,
-	width, # size of window
-	height,
-	step_factor): # 2.0 comes from equations, 1.0 seems to avoid overshooting
+def _compute2by1ErrorVector(np.ndarray[np.float32_t,ndim=1] imgdiff,
+	np.ndarray[np.float32_t,ndim=1] gradx,
+	np.ndarray[np.float32_t,ndim=1] grady,
+	int width, # size of window
+	int height,
+	float step_factor): # 2.0 comes from equations, 1.0 seems to avoid overshooting
 
 	# Compute values
-	ex = 0.
-	ey = 0.
-	ind = 0
+	cdef float ex = 0.
+	cdef float ey = 0.
+	cdef int ind = 0
+	cdef int i = 0
+	cdef float diff = 0.
+
 	for i in range(width * height):
 		diff = imgdiff[ind]
 		ex += diff * gradx[ind]
@@ -265,15 +269,18 @@ def _compute2by1ErrorVector(imgdiff,
 #*
 #*
 
-def _compute2by2GradientMatrix(gradx, grady,
-	width,   # size of window */
-	height):
+def _compute2by2GradientMatrix(np.ndarray[np.float32_t,ndim=1] gradx, 
+	np.ndarray[np.float32_t,ndim=1] grady,
+	int width,   # size of window
+	int height):
 
 	# Compute values 
-	gxx = 0.0
-	gxy = 0.0
-	gyy = 0.0
-	ind = 0
+	cdef float gx, gy
+	cdef float gxx = 0.0
+	cdef float gxy = 0.0
+	cdef float gyy = 0.0
+	cdef int ind = 0, i
+
 	for i in range(width * height):
 		gx = gradx[ind]
 		gy = grady[ind]
@@ -283,9 +290,6 @@ def _compute2by2GradientMatrix(gradx, grady,
 		ind += 1
 
 	return gxx, gxy, gyy
-	
-
-
 
 #*********************************************************************
 #* _solveEquation
@@ -302,9 +306,10 @@ def _solveEquation(float gxx, float gxy, float gyy,
 	float ex, float ey,
 	float small):
 
-	cdef float det = gxx*gyy - gxy*gxy
+	cdef float det = gxx*gyy - gxy*gxy, dx, dy
 	
-	if det < small: return kltState.KLT_SMALL_DET, None, None
+	if det < small: 
+		return kltState.KLT_SMALL_DET, None, None
 
 	dx = (gyy*ex - gxy*ey)/det
 	dy = (gxx*ey - gxy*ex)/det
