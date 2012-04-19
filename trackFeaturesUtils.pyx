@@ -58,7 +58,7 @@ cdef extractImagePatchOptimised(np.ndarray[np.float32_t,ndim=2] img, float x, fl
 #* between the two overlaid images.
 #*
 
-def _computeIntensityDifference(np.ndarray[np.float32_t,ndim=2] img1Patch,   # images 
+cdef _computeIntensityDifference(np.ndarray[np.float32_t,ndim=2] img1Patch,   # images 
 	np.ndarray[np.float32_t,ndim=2] img2,
 	float x2, 
 	float y2,     # center of window in 2nd img
@@ -84,6 +84,13 @@ def _computeIntensityDifference(np.ndarray[np.float32_t,ndim=2] img1Patch,   # i
 	
 	return imgdiff
 
+def computeIntensityDifference(np.ndarray[np.float32_t,ndim=2] img1Patch,   # images 
+	np.ndarray[np.float32_t,ndim=2] img2,
+	float x2, 
+	float y2,     # center of window in 2nd img
+	np.ndarray[np.float32_t,ndim=2] workingPatch): # temporary memory for patch storage, size determines window size
+	return _computeIntensityDifference(img1Patch, img2, x2, y2, workingPatch)
+
 #*********************************************************************
 #* _computeGradientSum
 #*
@@ -92,7 +99,7 @@ def _computeIntensityDifference(np.ndarray[np.float32_t,ndim=2] img1Patch,   # i
 #* overlaid gradients.
 #*
 
-def _computeGradientSum(np.ndarray[np.float32_t,ndim=2] img1GradxPatch,  # gradient images
+cdef _computeGradientSum(np.ndarray[np.float32_t,ndim=2] img1GradxPatch,  # gradient images
 	np.ndarray[np.float32_t,ndim=2] gradx2,
 	float x2, float y2,      # center of window in 2nd img
 	np.ndarray[np.float32_t,ndim=2] workingPatch, # temporary memory for patch storage, size determines window size
@@ -113,7 +120,7 @@ def _computeGradientSum(np.ndarray[np.float32_t,ndim=2] img1GradxPatch,  # gradi
 			g1 = img1GradxPatch[j, i]
 			g2 = workingPatch[j, i]
 
-			out[j*workingPatch.shape[0] + i, row] = g1 + g2
+			out[j*workingPatch.shape[0] + i, row] = - g1 - g2
 
 #*********************************************************************
 #* _computeIntensityDifferenceLightingInsensitive
@@ -277,11 +284,11 @@ def _compute2by2GradientMatrix(gradx, grady,
 #* Returns KLT_TRACKED on success and KLT_SMALL_DET on failure
 #*
 
-def _solveEquation(gxx, gxy, gyy,
-	ex, ey,
-	small):
+def _solveEquation(float gxx, float gxy, float gyy,
+	float ex, float ey,
+	float small):
 
-	det = gxx*gyy - gxy*gxy
+	cdef float det = gxx*gyy - gxy*gxy
 	
 	if det < small: return kltState.KLT_SMALL_DET, None, None
 
@@ -289,11 +296,22 @@ def _solveEquation(gxx, gxy, gyy,
 	dy = (gxx*ey - gxy*ex)/det
 	return kltState.KLT_TRACKED, dx, dy
 
-def minFunc(xData, img1Patch, img1GradxPatch, img1GradyPatch, img2, workingPatch, tc, gradx2, grady2):
-	x2, y2 = xData
+def minFunc(np.ndarray[double,ndim=1] xData, 
+	np.ndarray[np.float32_t,ndim=2] img1Patch, 
+	np.ndarray[np.float32_t,ndim=2] img1GradxPatch, 
+	np.ndarray[np.float32_t,ndim=2] img1GradyPatch, 
+	np.ndarray[np.float32_t,ndim=2] img2, 
+	np.ndarray[np.float32_t,ndim=2] workingPatch, 
+	np.ndarray[np.float32_t,ndim=2] jacobianMem, 
+	int lightInsensitive,
+	np.ndarray[np.float32_t,ndim=2] gradx2, 
+	np.ndarray[np.float32_t,ndim=2] grady2):
+
+	cdef float x2 = xData[0]
+	cdef float y2 = xData[1]
 
 	#print img1, img2, x1, y1, width, height
-	if tc.lighting_insensitive:
+	if lightInsensitive:
 		raise Exception("Not implemented")
 		#imgdiff = _computeIntensityDifferenceLightingInsensitive(img1, img2, x1, y1, x2, y2, workingPatch)
 	else:
@@ -302,29 +320,27 @@ def minFunc(xData, img1Patch, img1GradxPatch, img1GradyPatch, img2, workingPatch
 	#print "test", x2, y2, np.array(imgdiff).sum()
 	return imgdiff
 
-def jacobian(xData, np.ndarray[np.float32_t,ndim=2] img1Patch, 
+def jacobian(np.ndarray[double,ndim=1] xData, 
+	np.ndarray[np.float32_t,ndim=2] img1Patch, 
 	np.ndarray[np.float32_t,ndim=2] img1GradxPatch, 
 	np.ndarray[np.float32_t,ndim=2] img1GradyPatch, 
 	np.ndarray[np.float32_t,ndim=2] img2, 
 	np.ndarray[np.float32_t,ndim=2] workingPatch, 
-	tc, 
+	np.ndarray[np.float32_t,ndim=2] jacobianMem, 
+	int lightInsensitive,
 	np.ndarray[np.float32_t,ndim=2] gradx2, 
 	np.ndarray[np.float32_t,ndim=2] grady2):
 
-	#cdef np.ndarray[np.float32_t,ndim=1] gradx, grady
-
 	cdef float x2 = xData[0]
 	cdef float y2 = xData[1]
-	out = np.zeros((workingPatch.size,2), np.float32)
 
 	#print img1, img2, x1, y1, width, height
-	if tc.lighting_insensitive:
+	if lightInsensitive:
 		raise Exception("Not implemented")
-		#gradx, grady = _computeGradientSumLightingInsensitive(gradx1, grady1, gradx, grady2, img1, img2, x1, y1, x2, y2, workingPatch)
+		#gradx, grady = _computeGradientSumLightingInsensitive(gradx1, grady1, gradx, grady2, img1, img2, x1, y1, x2, y2, workingPatch, jacobianMem)
 	else:
-		_computeGradientSum(img1GradxPatch, gradx2, x2, y2, workingPatch, out, 0)
-		_computeGradientSum(img1GradyPatch, grady2, x2, y2, workingPatch, out, 1)
+		_computeGradientSum(img1GradxPatch, gradx2, x2, y2, workingPatch, jacobianMem, 0)
+		_computeGradientSum(img1GradyPatch, grady2, x2, y2, workingPatch, jacobianMem, 1)
 
-	return -out
-
+	return jacobianMem
 

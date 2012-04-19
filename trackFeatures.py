@@ -32,12 +32,14 @@ def trackFeatureIterateSciPy(x2, y2, img1GradxPatch, img1GradyPatch, img1Patch, 
 	nr = img2.shape[0]
 
 	workingPatch = np.empty((height, width), np.float32)
+	jacobianMem = np.zeros((workingPatch.size,2), np.float32)
 
 	with warnings.catch_warnings():
 		warnings.simplefilter("ignore") #Surpress warnings about max iterations
 
 		soln = scipy.optimize.leastsq(func=trackFeaturesUtils.minFunc, 
-			x0=(x2, y2), args=(img1Patch, img1GradxPatch, img1GradyPatch, img2, workingPatch, tc, gradx2, grady2), 
+			x0=(x2, y2), args=(img1Patch, img1GradxPatch, img1GradyPatch, img2, workingPatch, 
+				jacobianMem, tc.lighting_insensitive, gradx2, grady2), 
 			Dfun=trackFeaturesUtils.jacobian,factor=step_factor,maxfev=max_iterations)
 	status = kltState.KLT_TRACKED
 	x2 = soln[0][0]
@@ -85,10 +87,13 @@ def trackFeatureIterateCKLT(x2, y2, img1GradxPatch, img1GradyPatch, img1Patch, i
 			#imgdiff = trackFeaturesUtils._computeIntensityDifferenceLightingInsensitive(img1Patch, img2, x2, y2, workingPatch)
 			#gradx, grady = trackFeaturesUtils._computeGradientSumLightingInsensitive(gradx1, grady1, gradx, grady2, img1, img2, x1, y1, x2, y2, workingPatch)
 		else:
-			imgdiff = trackFeaturesUtils._computeIntensityDifference(img1Patch, img2, x2, y2, workingPatch)
+			imgdiff = trackFeaturesUtils.computeIntensityDifference(img1Patch, img2, x2, y2, workingPatch)
 
-			trackFeaturesUtils._computeGradientSum(img1GradxPatch, gradx2, x2, y2, gradx)
-			trackFeaturesUtils._computeGradientSum(img1GradyPatch, grady2, x2, y2, grady)
+			trackFeaturesUtils._computeGradientSum(img1GradxPatch, gradx2, x2, y2, gradx, 0)
+			trackFeaturesUtils._computeGradientSum(img1GradyPatch, grady2, x2, y2, grady, 0)
+
+			gradx = - gradx
+			grady = - grady
 
 		# Use these windows to construct matrices 
 		gxx, gxy, gyy = trackFeaturesUtils._compute2by2GradientMatrix(gradx, grady, width, height)
@@ -169,9 +174,9 @@ def _trackFeature(
 	# Check whether residue is too large 
 	if status == kltState.KLT_TRACKED and max_residue is not None:
 		if lighting_insensitive:
-			imgdiff = trackFeaturesUtils._computeIntensityDifferenceLightingInsensitive(img1Patch, img2, x1, y1, x2, y2, workingPatch)
+			imgdiff = trackFeaturesUtils.computeIntensityDifferenceLightingInsensitive(img1Patch, img2, x1, y1, x2, y2, workingPatch)
 	  	else:
-			imgdiff = trackFeaturesUtils._computeIntensityDifference(img1Patch, img2, x2, y2, workingPatch)
+			imgdiff = trackFeaturesUtils.computeIntensityDifference(img1Patch, img2, x2, y2, workingPatch)
 
 		if np.abs(np.array(imgdiff)).sum()/(width*height) > max_residue:
 			status = kltState.KLT_LARGE_RESIDUE
