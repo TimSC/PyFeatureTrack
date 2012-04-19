@@ -275,29 +275,32 @@ cdef _compute2by1ErrorVector(np.ndarray[np.float32_t,ndim=1] imgdiff,
 #*
 #*
 
-cdef _compute2by2GradientMatrix(np.ndarray[np.float32_t,ndim=2] jacobian,
+cdef int _compute2by2GradientMatrix(np.ndarray[np.float32_t,ndim=2] jacobian,
 	int width,   # size of window
-	int height):
+	int height,
+	np.ndarray[np.float32_t,ndim=2] out):
 
 	#cdef np.ndarray[np.float32_t,ndim=1] gradx = - jacobian[:,0]
 	#cdef np.ndarray[np.float32_t,ndim=1] grady = - jacobian[:,1]
 
 	# Compute values 
 	cdef float gx, gy
-	cdef float gxx = 0.0
-	cdef float gxy = 0.0
-	cdef float gyy = 0.0
+	out[0,0] = 0.
+	out[1,0] = 0.
+	out[0,1] = 0.
+	out[1,1] = 0.
 	cdef int ind = 0, i
 
 	for i in range(width * height):
 		gx = - jacobian[ind,0]
 		gy = - jacobian[ind,1]
-		gxx += gx*gx;
-		gxy += gx*gy;
-		gyy += gy*gy;
+		out[0,0] += gx*gx;
+		out[1,0] += gx*gy;
+		out[1,1] += gy*gy;
 		ind += 1
 
-	return gxx, gxy, gyy
+	out[0,1] = out[1,0]
+	return 1 
 
 #*********************************************************************
 #* _solveEquation
@@ -310,9 +313,13 @@ cdef _compute2by2GradientMatrix(np.ndarray[np.float32_t,ndim=2] jacobian,
 #* Returns KLT_TRACKED on success and KLT_SMALL_DET on failure
 #*
 
-cdef _solveEquation(float gxx, float gxy, float gyy,
+cdef _solveEquation(np.ndarray[np.float32_t,ndim=2] gradientMatrix,
 	float ex, float ey,
 	float small):
+
+	cdef float gxx = gradientMatrix[0,0]
+	cdef float gxy = gradientMatrix[0,1]
+	cdef float gyy = gradientMatrix[1,1]
 
 	cdef float det = gxx*gyy - gxy*gxy, dx, dy
 	
@@ -399,8 +406,9 @@ def trackFeatureIterateCKLT(float x2,
 	cdef int nc = img2.shape[1]
 	cdef int nr = img2.shape[0]
 	cdef np.ndarray[np.float32_t,ndim=2] workingPatch = np.empty((height, width), np.float32)
-	cdef np.ndarray[np.float32_t,ndim=1] imgdiff = np.zeros((workingPatch.size), np.float32)
-	cdef np.ndarray[np.float32_t,ndim=2] jacobian = np.zeros((workingPatch.size,2), np.float32)
+	cdef np.ndarray[np.float32_t,ndim=1] imgdiff = np.empty((workingPatch.size), np.float32)
+	cdef np.ndarray[np.float32_t,ndim=2] jacobian = np.empty((workingPatch.size,2), np.float32)
+	cdef np.ndarray[np.float32_t,ndim=2] gradientMatrix = np.empty((2,2), np.float32)
 	cdef float gxx, gxy, gyy, ex, ey, dx, dy
 
 	# Iteratively update the window position 
@@ -427,11 +435,11 @@ def trackFeatureIterateCKLT(float x2,
 			#grady = - jacobian[:,1]
 
 		# Use these windows to construct matrices 
-		gxx, gxy, gyy = _compute2by2GradientMatrix(jacobian, width, height)
+		_compute2by2GradientMatrix(jacobian, width, height, gradientMatrix)
 		ex, ey = _compute2by1ErrorVector(imgdiff, jacobian, width, height, step_factor)
 
 		# Using matrices, solve equation for new displacement */
-		status, dx, dy = _solveEquation(gxx, gxy, gyy, ex, ey, small)
+		status, dx, dy = _solveEquation(gradientMatrix, ex, ey, small)
 		if status == kltState.KLT_SMALL_DET: break
 
 		x2 += dx
