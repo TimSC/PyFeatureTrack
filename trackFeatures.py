@@ -193,6 +193,51 @@ def _trackFeature(
 def _outOfBounds(x, y, ncols, nrows, borderx, bordery):
 	return x < borderx or x > ncols-1-borderx or y < bordery or y > nrows-1-bordery
 
+
+#*********************************************************************
+
+def ComputeImagePyramids(tc, img1, img2):
+	ncols, nrows = img1.size
+	subsampling = float(tc.subsampling)
+
+	# Process first image by converting to float, smoothing, computing 
+	# pyramid, and computing gradient pyramids 
+	if tc.sequentialMode and tc.pyramid_last is not None:
+		pyramid1 = tc.pyramid_last
+		pyramid1_gradx = tc.pyramid_last_gradx
+		pyramid1_grady = tc.pyramid_last_grady
+		if pyramid1.ncols[0] != ncols or pyramid1.nrows[0] != nrows:
+			KLTError("(KLTTrackFeatures) Size of incoming image ({0} by {1}) " + \
+			"is different from size of previous image ({2} by {3})".format( \
+			ncols, nrows, pyramid1.ncols[0], pyramid1.nrows[0]))
+		assert pyramid1_gradx is not None
+		assert pyramid1_grady is not None
+	else:
+		floatimg1_created = True
+		#floatimg1 = Image.new("F", img1.size)
+		tmpimg = np.array(img1.convert("F"))
+		floatimg1 = KLTComputeSmoothedImage(tmpimg, KLTComputeSmoothSigma(tc))
+		pyramid1 = KLTPyramid(ncols, nrows, int(subsampling), tc.nPyramidLevels)
+		pyramid1.Compute(floatimg1, tc.pyramid_sigma_fact)
+		pyramid1_gradx = KLTPyramid(ncols, nrows, int(subsampling), tc.nPyramidLevels)
+		pyramid1_grady = KLTPyramid(ncols, nrows, int(subsampling), tc.nPyramidLevels)
+		for i in range(tc.nPyramidLevels):
+			pyramid1_gradx.img[i],pyramid1_grady.img[i] = KLTComputeGradients(pyramid1.img[i], tc.grad_sigma)
+
+	# Do the same thing with second image
+	#floatimg2 = _KLTCreateFloatImage(ncols, nrows)
+	tmpimg = np.array(img2.convert("F"))
+	floatimg2 = KLTComputeSmoothedImage(tmpimg, KLTComputeSmoothSigma(tc))
+	pyramid2 = KLTPyramid(ncols, nrows, int(subsampling), tc.nPyramidLevels)
+	pyramid2.Compute(floatimg2, tc.pyramid_sigma_fact)
+	pyramid2_gradx = KLTPyramid(ncols, nrows, int(subsampling), tc.nPyramidLevels)
+	pyramid2_grady = KLTPyramid(ncols, nrows, int(subsampling), tc.nPyramidLevels)
+	for i in range(tc.nPyramidLevels):
+		pyramid2_gradx.img[i], pyramid2_grady.img[i] = KLTComputeGradients(pyramid2.img[i], tc.grad_sigma)
+
+	return pyramid1, pyramid1_gradx, pyramid1_grady, pyramid2, pyramid2_gradx, pyramid2_grady
+
+
 #*********************************************************************
 #* KLTTrackFeatures
 #*
@@ -240,40 +285,8 @@ def KLTTrackFeatures(tc, img1, img2, featurelist):
 		KLTWarning("Tracking context's window height must be at least three.  \n" + \
 			"Changing to {0}.".format(tc.window_height))
 
-	# Process first image by converting to float, smoothing, computing 
-	# pyramid, and computing gradient pyramids 
-	if tc.sequentialMode and tc.pyramid_last is not None:
-		pyramid1 = tc.pyramid_last
-		pyramid1_gradx = tc.pyramid_last_gradx
-		pyramid1_grady = tc.pyramid_last_grady
-		if pyramid1.ncols[0] != ncols or pyramid1.nrows[0] != nrows:
-			KLTError("(KLTTrackFeatures) Size of incoming image ({0} by {1}) " + \
-			"is different from size of previous image ({2} by {3})".format( \
-			ncols, nrows, pyramid1.ncols[0], pyramid1.nrows[0]))
-		assert pyramid1_gradx is not None
-		assert pyramid1_grady is not None
-	else:
-		floatimg1_created = True
-		#floatimg1 = Image.new("F", img1.size)
-		tmpimg = np.array(img1.convert("F"))
-		floatimg1 = KLTComputeSmoothedImage(tmpimg, KLTComputeSmoothSigma(tc))
-		pyramid1 = KLTPyramid(ncols, nrows, int(subsampling), tc.nPyramidLevels)
-		pyramid1.Compute(floatimg1, tc.pyramid_sigma_fact)
-		pyramid1_gradx = KLTPyramid(ncols, nrows, int(subsampling), tc.nPyramidLevels)
-		pyramid1_grady = KLTPyramid(ncols, nrows, int(subsampling), tc.nPyramidLevels)
-		for i in range(tc.nPyramidLevels):
-			pyramid1_gradx.img[i],pyramid1_grady.img[i] = KLTComputeGradients(pyramid1.img[i], tc.grad_sigma)
-
-	# Do the same thing with second image
-	#floatimg2 = _KLTCreateFloatImage(ncols, nrows)
-	tmpimg = np.array(img2.convert("F"))
-	floatimg2 = KLTComputeSmoothedImage(tmpimg, KLTComputeSmoothSigma(tc))
-	pyramid2 = KLTPyramid(ncols, nrows, int(subsampling), tc.nPyramidLevels)
-	pyramid2.Compute(floatimg2, tc.pyramid_sigma_fact)
-	pyramid2_gradx = KLTPyramid(ncols, nrows, int(subsampling), tc.nPyramidLevels)
-	pyramid2_grady = KLTPyramid(ncols, nrows, int(subsampling), tc.nPyramidLevels)
-	for i in range(tc.nPyramidLevels):
-		pyramid2_gradx.img[i], pyramid2_grady.img[i] = KLTComputeGradients(pyramid2.img[i], tc.grad_sigma)
+	pyramid1, pyramid1_gradx, pyramid1_grady, \
+		pyramid2, pyramid2_gradx, pyramid2_grady = ComputeImagePyramids(tc, img1, img2)
 
 	# Write internal images 
 	if tc.writeInternalImages:
