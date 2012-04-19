@@ -123,6 +123,10 @@ def _trackFeature(
 		if np.abs(np.array(imgdiff)).sum()/(width*height) > max_residue:
 			status = kltState.KLT_LARGE_RESIDUE
 
+	if tc.retainTrackers:
+		# Try to continue and don't remo
+		return kltState.KLT_TRACKED, x2, y2
+
 	# Return appropriate value 
 	if status == kltState.KLT_SMALL_DET: return kltState.KLT_SMALL_DET, x2, y2
 	elif status == kltState.KLT_OOB: return kltState.KLT_OOB, x2, y2

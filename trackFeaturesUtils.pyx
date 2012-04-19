@@ -447,7 +447,8 @@ def trackFeatureIterateCKLT(float x2,
 
 		# Using matrices, solve equation for new displacement */
 		status = _solveEquation(gradientMatrix, errorMatrix, small, predictedMotion)
-		if status == kltState.KLT_SMALL_DET: break
+		if status == kltState.KLT_SMALL_DET: 
+			break
 
 		x2 += predictedMotion[0]
 		y2 += predictedMotion[1]

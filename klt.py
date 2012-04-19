@@ -44,6 +44,7 @@ class KLT_TrackingContext:
 		self.window_width = 7
 		self.window_height = 7
 		self.sequentialMode = False
+		self.retainTrackers = False
 		self.smoothBeforeSelecting = True
 		self.writeInternalImages = False
 		self.lighting_insensitive = False
