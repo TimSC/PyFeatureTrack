@@ -12,7 +12,7 @@ The code is available under the Simplified BSD License.
 Dependencies
 ============
 
-Python >= 2.6, PIL, Numpy, SciPy >= 0.8, cython
+Python >= 2.6 or >=3.4, PIL, Numpy, SciPy >= 0.8, cython
 
 Development
 ===========
@@ -37,3 +37,4 @@ Usage
     python setup.py build_ext --inplace
 
     python example1.py
+

@@ -1,3 +1,4 @@
+from __future__ import print_function
 
 #*********************************************************************
 #* KLTError
@@ -9,7 +10,7 @@
 #*
 
 def KLTError(err):
-	print err
+	print(err)
 	exit(1)
 
 
@@ -24,5 +25,5 @@ def KLTError(err):
 
 def KLTWarning(err):
 
-	print err
+	print(err)
 

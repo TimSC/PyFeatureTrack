@@ -1,4 +1,5 @@
 
+from __future__ import print_function
 import math, numpy as np
 from PIL import Image
 
@@ -8,7 +9,7 @@ try:
 	import scipy.ndimage
 	useScipyConvolution = True
 except:
-	print "Warning: Failed to import scipy.ndimage"
+	print("Warning: Failed to import scipy.ndimage")
 
 class ConvolutionKernel:
 	def __init__(self, maxKernelWidth = 71):
@@ -35,7 +36,7 @@ def _computeKernels(sigma):
 
 	# Compute kernels, and automatically determine widths */
 
-	hw = maxKernelWidth / 2
+	hw = int(maxKernelWidth / 2)
 	max_gauss = 1.0
 	max_gaussderiv = float(sigma*math.exp(-0.5))
 	
@@ -62,12 +63,12 @@ def _computeKernels(sigma):
 
 	# Shift if width less than maxKernelWidth 
 	for i in range(gauss.width):
-		gauss.data[i] = gauss.data[i+(maxKernelWidth-gauss.width)/2]
+		gauss.data[i] = gauss.data[int(i+(maxKernelWidth-gauss.width)/2)]
 	for i in range(gaussderiv.width):
-		gaussderiv.data[i] = gaussderiv.data[i+(maxKernelWidth-gaussderiv.width)/2]
+		gaussderiv.data[i] = gaussderiv.data[int(i+(maxKernelWidth-gaussderiv.width)/2)]
 
 	# Normalize gauss and deriv 
-	hw = gaussderiv.width / 2
+	hw = int(gaussderiv.width / 2)
 	den = 0.0;
 	for i in range(gauss.width): 
 		den += gauss.data[i]
@@ -237,7 +238,7 @@ def KLTComputeGradients(img, sigma):
 	else:
 		gauss_kernel, gaussderiv_kernel = cachegauss, cachegaussderiv
 	
-	#print gauss_kernel
+	#print(gauss_kernel)
 	#plt.plot(gauss_kernel)
 	#plt.show()
 

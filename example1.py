@@ -6,6 +6,7 @@
 #**********************************************************************
 
 #include "pnmio.h"
+from __future__ import print_function
 from klt import *
 from PIL import Image
 from selectGoodFeatures import *
@@ -27,9 +28,9 @@ def main():
 
 	fl = KLTSelectGoodFeatures(tc, img1, nFeatures)
 
-	print "\nIn first image:"
+	print("\nIn first image:")
 	for i, feat in enumerate(fl):
-		print "Feature #{0}:  ({1},{2}) with value of {3}".format(i, feat.x, feat.y, feat.val)
+		print("Feature #{0}:  ({1},{2}) with value of {3}".format(i, feat.x, feat.y, feat.val))
 
 	KLTWriteFeatureListToPPM(fl, img1, "feat1.ppm")
 	#KLTWriteFeatureList(fl, "feat1.txt", "%3d")
@@ -53,11 +54,11 @@ def main():
 		KLTTrackFeatures(tc, img1, img2, fl)
 		KLTTrackFeatures(tc, img2, img1, fl)
 		count += 2
-	print (time.clock() - ti) / count
+	print((time.clock() - ti) / count)
 
-	print "\nIn second image:"
+	print("\nIn second image:")
 	for i, feat in enumerate(fl):
-		print "Feature #{0}:  ({1},{2}) with value of {3}".format(i, feat.x, feat.y, feat.val)
+		print("Feature #{0}:  ({1},{2}) with value of {3}".format(i, feat.x, feat.y, feat.val))
 
 	KLTWriteFeatureListToPPM(fl, img2, "feat2.ppm")
 	#KLTWriteFeatureList(fl, "feat2.fl", NULL)      # binary file 

@@ -4,6 +4,8 @@
 #* Kanade-Lucas-Tomasi tracker
 #*********************************************************************/
 
+from __future__ import print_function
+
 #typedef float KLT_locType;
 #typedef unsigned char KLT_PixelType;
 
@@ -123,7 +125,7 @@ class KLT_TrackingContext:
 			#   Then, the value is rounded up to the nearest integer. 
 			val = float (math.log(7.0*subsampling+1.0)/math.log(8.0))
 			self.nPyramidLevels = int(val + 0.99)
-		  	self.subsampling = 8
+			self.subsampling = 8
 		
 
 
@@ -282,33 +284,33 @@ class KLT_FeatureTable:
 
 def KLTPrintTrackingContext(tc):
 
-	print tc
-	print "\n\nTracking context:\n"
-	print "\tmindist = {0}".format(tc.mindist)
-	print "\twindow_width = {0}".format(tc.window_width)
-	print "\twindow_height = {0}".format(tc.window_height)
-	print "\tsequentialMode = {0}".format(tc.sequentialMode)
-	print "\tsmoothBeforeSelecting = {0}".format(tc.smoothBeforeSelecting)
-	print "\twriteInternalImages = {0}".format(tc.writeInternalImages)
+	print(tc)
+	print("\n\nTracking context:\n")
+	print("\tmindist = {0}".format(tc.mindist))
+	print("\twindow_width = {0}".format(tc.window_width))
+	print("\twindow_height = {0}".format(tc.window_height))
+	print("\tsequentialMode = {0}".format(tc.sequentialMode))
+	print("\tsmoothBeforeSelecting = {0}".format(tc.smoothBeforeSelecting))
+	print("\twriteInternalImages = {0}".format(tc.writeInternalImages))
 
-	print "\tmin_eigenvalue = {0}".format(tc.min_eigenvalue)
-	print "\tmin_determinant = {0}".format(tc.min_determinant)
-	print "\tmin_displacement = {0}".format(tc.min_displacement)
-	print "\tmax_iterations = {0}".format(tc.max_iterations)
-	print "\tmax_residue = {0}".format(tc.max_residue)
-	print "\tgrad_sigma = {0}".format(tc.grad_sigma)
-	print "\tsmooth_sigma_fact = {0}".format(tc.smooth_sigma_fact)
-	print "\tpyramid_sigma_fact = {0}".format(tc.pyramid_sigma_fact)
-	print "\tnSkippedPixels = {0}".format(tc.nSkippedPixels)
-	print "\tborderx = {0}".format(tc.borderx)
-	print "\tbordery = {0}".format(tc.bordery)
-	print "\tnPyramidLevels = {0}".format(tc.nPyramidLevels)
-	print "\tsubsampling = {0}".format(tc.subsampling)
+	print("\tmin_eigenvalue = {0}".format(tc.min_eigenvalue))
+	print("\tmin_determinant = {0}".format(tc.min_determinant))
+	print("\tmin_displacement = {0}".format(tc.min_displacement))
+	print("\tmax_iterations = {0}".format(tc.max_iterations))
+	print("\tmax_residue = {0}".format(tc.max_residue))
+	print("\tgrad_sigma = {0}".format(tc.grad_sigma))
+	print("\tsmooth_sigma_fact = {0}".format(tc.smooth_sigma_fact))
+	print("\tpyramid_sigma_fact = {0}".format(tc.pyramid_sigma_fact))
+	print("\tnSkippedPixels = {0}".format(tc.nSkippedPixels))
+	print("\tborderx = {0}".format(tc.borderx))
+	print("\tbordery = {0}".format(tc.bordery))
+	print("\tnPyramidLevels = {0}".format(tc.nPyramidLevels))
+	print("\tsubsampling = {0}".format(tc.subsampling))
 
-	print "\n\tpyramid_last = {0}".format(tc.pyramid_last)
-	print "\tpyramid_last_gradx = {0}".format(tc.pyramid_last_gradx)
-	print "\tpyramid_last_grady = {0}".format(tc.pyramid_last_grady)
-	print "\n"
+	print("\n\tpyramid_last = {0}".format(tc.pyramid_last))
+	print("\tpyramid_last_gradx = {0}".format(tc.pyramid_last_gradx))
+	print("\tpyramid_last_grady = {0}".format(tc.pyramid_last_grady))
+	print("\n")
 
 #*********************************************************************
 #* KLTCountRemainingFeatures

@@ -1,4 +1,5 @@
 
+from __future__ import print_function
 import math, numpy as np
 from PIL import Image
 from klt import *
@@ -89,7 +90,7 @@ def _enforceMinimumDistance(pointlist, featurelist, ncols, nrows, mindist, min_e
 					featurelist[indx].aff_Ayx = 0.0
 					featurelist[indx].aff_Axy = 0.0
 					featurelist[indx].aff_Ayy = 1.0
-			  	indx = indx + 1
+				indx = indx + 1
 			break
 
 		pointdata = pointlist[pointlistIndx]
@@ -230,11 +231,11 @@ def _KLTSelectGoodFeatures(tc,img,nFeatures,mode):
 		grady, borderx, bordery, window_hw, window_hh, tc.nSkippedPixels)
 			
 	# Sort the features 
-	pointlist = zip(pointlistval, pointlistx, pointlisty)
+	pointlist = list(zip(pointlistval, pointlistx, pointlisty))
 	pointlist.sort()
 	pointlist.reverse()
 
-	#print pointlist
+	#print(pointlist)
 
 	# Check tc.mindist 
 	if tc.mindist < 0:
@@ -281,14 +282,14 @@ def KLTSelectGoodFeatures(tc, img, nFeatures):
 
 	#int ncols, int nrows,
 	if KLT_verbose >= 1:
-		print "(KLT) Selecting the {0} best features from a {1} by {2} image...  ".format(nFeatures, ncols, nrows)
+		print("(KLT) Selecting the {0} best features from a {1} by {2} image...  ".format(nFeatures, ncols, nrows))
 
 	fl = _KLTSelectGoodFeatures(tc, img, nFeatures, selectionMode.SELECTING_ALL)
 
 	if KLT_verbose >= 1:
-		print "\n\t{0} features found.\n".format(KLTCountRemainingFeatures(fl))
-    	if tc.writeInternalImages:
-		print "\tWrote images to 'kltimg_sgfrlf*.pgm'.\n"
+		print("\n\t{0} features found.\n".format(KLTCountRemainingFeatures(fl)))
+		if tc.writeInternalImages:
+			print("\tWrote images to 'kltimg_sgfrlf*.pgm'.\n")
 
 	return fl
 

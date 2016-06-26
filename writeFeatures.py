@@ -1,4 +1,5 @@
 
+from __future__ import print_function
 from selectGoodFeatures import KLT_verbose
 from klt import *
 
@@ -16,7 +17,7 @@ def KLTWriteFeatureListToPPM(featurelist, greyimg, filename):
 	ncols, nrows = greyimg.size
 
 	if KLT_verbose:
-		print "(KLT) Writing {0} features to PPM file: '{1}'".format(KLTCountRemainingFeatures(featurelist), filename)
+		print("(KLT) Writing {0} features to PPM file: '{1}'".format(KLTCountRemainingFeatures(featurelist), filename))
 
 	tmp = greyimg.copy()
 	tmp = tmp.convert("RGB")
@@ -46,7 +47,7 @@ def KLTWriteFeatureListToPPM(featurelist, greyimg, filename):
 #* INPUTS
 #* fname: name of file to write data; if NULL, then print to stderr
 #* fmt:   format for printing (e.g., "%5.1f" or "%3d");
-#*        if NULL, and if fname is not NULL, then write to binary file.
+#*		if NULL, and if fname is not NULL, then write to binary file.
 #*
 
 def KLTWriteFeatureList(fl, fname, fmt):
@@ -58,11 +59,11 @@ def KLTWriteFeatureList(fl, fname, fmt):
 
 	fmtStr = "binary" if fmt is None else "text"
 	if KLT_verbose >= 1 and fname is not None:
-		print "(KLT) Writing feature list to {0} file: '{1}'".format(fmtStr, fname)
+		print("(KLT) Writing feature list to {0} file: '{1}'".format(fmtStr, fname))
 
 	if fmt is not None: # text file or stderr
-		fp = _printSetupTxt(fname, fmt, format, type);
-	  	_printHeader(fp, format, FEATURE_LIST, 0, fl.nFeatures);
+		fp = _printSetupTxt(fname, fmt, format, type)
+		_printHeader(fp, format, FEATURE_LIST, 0, fl.nFeatures)
 	
 	  	#for (i = 0 ; i < fl->nFeatures ; i++):
 		#	fprintf(fp, "%7d | ", i)

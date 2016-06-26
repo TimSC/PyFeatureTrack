@@ -3,6 +3,7 @@
 #*
 #*********************************************************************/
 
+from __future__ import print_function
 from selectGoodFeatures import KLT_verbose
 from klt import *
 from error import *
@@ -117,7 +118,7 @@ def _trackFeature(
 	if status == kltState.KLT_TRACKED and max_residue is not None:
 		if lighting_insensitive:
 			trackFeaturesUtils.computeIntensityDifferenceLightingInsensitive(img1Patch, img2, x1, y1, x2, y2, workingPatch, imgdiff)
-	  	else:
+		else:
 			trackFeaturesUtils.computeIntensityDifference(img1Patch, img2, x2, y2, workingPatch, imgdiff)
 
 		if np.abs(np.array(imgdiff)).sum()/(width*height) > max_residue:
@@ -218,8 +219,8 @@ def KLTTrackFeatures(tc, img1, img2, featurelist):
 	DEBUG_AFFINE_MAPPING = False
 
 	if KLT_verbose >= 1:
-		print "(KLT) Tracking {0} features in a {1} by {2} image...  ".format( \
-			KLTCountRemainingFeatures(featurelist), ncols, nrows)
+		print("(KLT) Tracking {0} features in a {1} by {2} image...  ".format( \
+			KLTCountRemainingFeatures(featurelist), ncols, nrows))
 
 	# Check window size (and correct if necessary) 
 	if tc.window_width % 2 != 1:
@@ -403,9 +404,9 @@ def KLTTrackFeatures(tc, img1, img2, featurelist):
 		tc.pyramid_last_grady = pyramid2_grady
 
 	if KLT_verbose >= 1:
-		print "\n\t{0} features successfully tracked.".format(KLTCountRemainingFeatures(featurelist))
+		print("\n\t{0} features successfully tracked.".format(KLTCountRemainingFeatures(featurelist)))
 		if tc.writeInternalImages:
-			print "\tWrote images to 'kltimg_tf*.pgm'."
+			print("\tWrote images to 'kltimg_tf*.pgm'.")
 
 
 
