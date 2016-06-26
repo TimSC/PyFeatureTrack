@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 #Note check this out: http://johnroach.info/2011/03/02/image-capturing-from-webcam-using-opencv-and-pygame-in-python/
-
+from __future__ import print_function
 import pygtk, math, array, numpy as np
 pygtk.require('2.0')
 import gtk, gobject, cv, cairo, opencv, multiprocessing, time, Queue
@@ -56,7 +56,7 @@ class WebcamWidget(gtk.Invisible):
 					self.count += 1
 				while len(self.buffer) > self.maxBufferSize:
 					self.buffer.pop(0)
-				#print ty, len(self.buffer)
+				#print(ty, len(self.buffer))
 			except Queue.Empty:
 				pass
 			
@@ -75,7 +75,7 @@ class WebcamWidget(gtk.Invisible):
 		while (running):
 			try:
 				pipeData = toWorker.get(0)
-				#print "Worker",pipeData[0]
+				#print("Worker",pipeData[0])
 				if pipeData[0] == "STOP":
 					running = False
 
@@ -86,7 +86,7 @@ class WebcamWidget(gtk.Invisible):
 			imIpl = cv.QueryFrame(cap)
 			if imIpl is not None:
 				pilImg = IplToPilImg(imIpl)
-			#	#print pilImg
+			#	#print(pilImg)
 				fromWorker.put(("FRAME",np.array(pilImg)))
 			time.sleep(1./100.)
 
@@ -143,7 +143,7 @@ class TrackingProcess:
 		while running:
 
 			while not toWorker.empty():
-				print toWorker.empty(), toWorker.qsize()
+				print(toWorker.empty(), toWorker.qsize())
 				try:
 					pipeData = toWorker.get()
 					if pipeData[0] == "STOP":
@@ -257,18 +257,18 @@ class Base:
 	def delete_event(self, widget, event, data=None):
 		self.webcam.Stop()
 		self.trackingProcess.Stop()
-		print "delete event occurred"
+		print("delete event occurred")
 		return False
 
 	def destroy(self, widget, data=None):
-		print "destroy window"
+		print("destroy window")
 		gtk.main_quit()
 
 	def main(self):
 		gtk.main()
 		
 	def UpdateImage(self):
-		#print "x"
+		#print("x")
 		#cv.GrabFrame(self.cap)
 		#imIpl = cv.RetrieveFrame(self.cap)
 		if self.showingFrame != self.webcam.GetFrameNum():
@@ -277,7 +277,7 @@ class Base:
 				self.visArea.SetImageByPil(Image.fromarray(img))
 
 				currentTracking = self.trackingProcess.GetCurrentTracking()
-				#print currentTracking
+				#print(currentTracking)
 				self.visArea.trackerPos = []
 				for pt in currentTracking:
 					if pt.val < 0: continue
